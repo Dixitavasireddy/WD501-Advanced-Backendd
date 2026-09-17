@@ -1,32 +1,29 @@
 const http = require("http");
 const fs = require("fs");
-const path = require("path");
 
-const args = process.argv.slice(2);
-const portArg = args.find((arg) => arg.startsWith("--port="));
-const PORT = portArg ? Number(portArg.split("=")[1]) : 3000;
+const port = process.argv[2]
+  ? Number(process.argv[2].split("=")[1])
+  : 5000;
 
 const server = http.createServer((req, res) => {
-  let fileName;
+  let file;
 
   if (req.url === "/" || req.url === "/home") {
-    fileName = "home.html";
+    file = "home.html";
   } else if (req.url === "/project") {
-    fileName = "project.html";
+    file = "project.html";
   } else if (req.url === "/registration") {
-    fileName = "registration.html";
+    file = "registration.html";
   } else {
     res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("404 - Page Not Found");
+    res.end("Page Not Found");
     return;
   }
 
-  const filePath = path.join(__dirname, fileName);
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
+  fs.readFile(file, (error, data) => {
+    if (error) {
       res.writeHead(500, { "Content-Type": "text/plain" });
-      res.end("500 - Internal Server Error");
+      res.end("Server Error");
       return;
     }
 
@@ -35,6 +32,6 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });

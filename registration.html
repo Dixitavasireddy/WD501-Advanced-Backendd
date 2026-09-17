@@ -1,202 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Registration | My Portfolio</title>
-
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: Arial, sans-serif;
-        background: #0f172a;
-        color: white;
-        min-height: 100vh;
-      }
-
-      nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 8%;
-        background: #111827;
-      }
-
-      .logo {
-        font-size: 24px;
-        font-weight: bold;
-        color: #60a5fa;
-      }
-
-      nav a {
-        color: white;
-        text-decoration: none;
-        margin-left: 25px;
-      }
-
-      nav a:hover {
-        color: #60a5fa;
-      }
-
-      .container {
-        width: 90%;
-        max-width: 500px;
-        margin: 60px auto;
-      }
-
-      .form-card {
-        background: #1e293b;
-        padding: 40px;
-        border-radius: 15px;
-        border: 1px solid #334155;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-      }
-
-      h1 {
-        text-align: center;
-        margin-bottom: 10px;
-      }
-
-      .subtitle {
-        text-align: center;
-        color: #94a3b8;
-        margin-bottom: 30px;
-      }
-
-      .form-group {
-        margin-bottom: 20px;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: bold;
-      }
-
-      input {
-        width: 100%;
-        padding: 13px;
-        border: 1px solid #475569;
-        border-radius: 8px;
-        background: #0f172a;
-        color: white;
-        font-size: 15px;
-        outline: none;
-      }
-
-      input:focus {
-        border-color: #60a5fa;
-      }
-
-      button {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        background: #2563eb;
-        color: white;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background: #1d4ed8;
-      }
-
-      .back {
-        display: block;
-        text-align: center;
-        margin-top: 20px;
-        color: #60a5fa;
-        text-decoration: none;
-      }
-
-      footer {
-        text-align: center;
-        padding: 20px;
-        color: #94a3b8;
-        border-top: 1px solid #1e293b;
-      }
-    </style>
+    <title>Registration</title>
   </head>
 
   <body>
-    <nav>
-      <div class="logo">My Portfolio</div>
+    <h1>Create Your Account</h1>
 
-      <div>
-        <a href="/home">Home</a>
-        <a href="/project">Projects</a>
-      </div>
-    </nav>
+    <p>Please enter your details to register.</p>
 
-    <main class="container">
-      <div class="form-card">
-        <h1>Create Your Account</h1>
+    <form action="#" method="post">
+      <fieldset>
+        <legend>Personal Details</legend>
 
-        <p class="subtitle">
-          Register to get started with the platform.
+        <p>
+          <label for="name">Full Name:</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Enter your name"
+            required
+          />
         </p>
 
-        <form>
-          <div class="form-group">
-            <label for="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
+        <p>
+          <label for="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter username"
+            minlength="3"
+            maxlength="20"
+            required
+          />
+        </p>
 
-          <div class="form-group">
-            <label for="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
+        <p>
+          <label for="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter your email"
+            required
+          />
+        </p>
 
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Create a password"
-              required
-            />
-          </div>
+        <p>
+          <label for="phone">Phone:</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            placeholder="Enter phone number"
+            pattern="[0-9]{10}"
+            required
+          />
+        </p>
+      </fieldset>
 
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="Enter your phone number"
-            />
-          </div>
+      <fieldset>
+        <legend>Account Details</legend>
 
-          <button type="submit">Create Account</button>
-        </form>
+        <p>
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter password"
+            minlength="6"
+            required
+          />
+        </p>
 
-        <a href="/project" class="back">← Back to Projects</a>
-      </div>
-    </main>
+        <p>
+          <label for="confirmPassword">Confirm Password:</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Confirm password"
+            required
+          />
+        </p>
+      </fieldset>
 
-    <footer>
-      <p>© 2026 My Portfolio | Built with HTML, CSS & Node.js</p>
-    </footer>
+      <fieldset>
+        <legend>Other Details</legend>
+
+        <p>
+          <label for="dob">Date of Birth:</label>
+          <input type="date" id="dob" name="dob" />
+        </p>
+
+        <p>
+          <label for="country">Country:</label>
+          <select id="country" name="country" required>
+            <option value="">Select Country</option>
+            <option value="india">India</option>
+            <option value="usa">USA</option>
+            <option value="uk">UK</option>
+            <option value="other">Other</option>
+          </select>
+        </p>
+
+        <p>
+          <input type="checkbox" id="terms" name="terms" required />
+          <label for="terms">I agree to the Terms and Conditions.</label>
+        </p>
+      </fieldset>
+
+      <p>
+        <button type="submit">Register</button>
+        <button type="reset">Clear</button>
+      </p>
+    </form>
+
+    <p>
+      <a href="/project">Back to Projects</a>
+    </p>
   </body>
 </html>

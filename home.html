@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home | My Portfolio</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #0f172a;
+        color: white;
+      }
+
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 8%;
+        background: #111827;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: #60a5fa;
+      }
+
+      nav a {
+        color: white;
+        text-decoration: none;
+        margin-left: 25px;
+      }
+
+      nav a:hover {
+        color: #60a5fa;
+      }
+
+      .hero {
+        min-height: 75vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+      }
+
+      .hero-content {
+        max-width: 750px;
+      }
+
+      .hero h1 {
+        font-size: 55px;
+        margin-bottom: 20px;
+      }
+
+      .hero h1 span {
+        color: #60a5fa;
+      }
+
+      .hero p {
+        color: #cbd5e1;
+        font-size: 18px;
+        line-height: 1.7;
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 14px 25px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        margin: 5px;
+      }
+
+      .btn:hover {
+        background: #1d4ed8;
+      }
+
+      footer {
+        text-align: center;
+        padding: 20px;
+        color: #94a3b8;
+        border-top: 1px solid #1e293b;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <div class="logo">My Portfolio</div>
+
+      <div>
+        <a href="/home">Home</a>
+        <a href="/project">Projects</a>
+        <a href="/registration">Register</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Welcome to <span>My Portfolio</span></h1>
+
+        <p>
+          A simple and professional space to showcase my projects,
+          technical skills, and journey in web development.
+        </p>
+
+        <a href="/project" class="btn">View Projects</a>
+        <a href="/registration" class="btn">Register</a>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2026 My Portfolio | Built with HTML, CSS & Node.js</p>
+    </footer>
+  </body>
+</html>

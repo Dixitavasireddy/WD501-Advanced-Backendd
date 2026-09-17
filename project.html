@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects | My Portfolio</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #0f172a;
+        color: white;
+      }
+
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 8%;
+        background: #111827;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: #60a5fa;
+      }
+
+      nav a {
+        color: white;
+        text-decoration: none;
+        margin-left: 25px;
+      }
+
+      nav a:hover {
+        color: #60a5fa;
+      }
+
+      .container {
+        width: 84%;
+        max-width: 1100px;
+        margin: auto;
+        padding: 60px 0;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 45px;
+        margin-bottom: 15px;
+      }
+
+      .intro {
+        text-align: center;
+        color: #cbd5e1;
+        margin-bottom: 45px;
+      }
+
+      .projects {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+      }
+
+      .card {
+        background: #1e293b;
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid #334155;
+      }
+
+      .card h2 {
+        color: #60a5fa;
+        margin-bottom: 15px;
+      }
+
+      .card p {
+        color: #cbd5e1;
+        line-height: 1.7;
+      }
+
+      .registration {
+        margin-top: 40px;
+        padding: 30px;
+        text-align: center;
+        background: #172554;
+        border-radius: 12px;
+      }
+
+      .registration h2 {
+        margin-bottom: 12px;
+      }
+
+      .registration p {
+        color: #cbd5e1;
+        margin-bottom: 20px;
+      }
+
+      .register-btn {
+        display: inline-block;
+        padding: 13px 25px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+      }
+
+      .register-btn:hover {
+        background: #1d4ed8;
+      }
+
+      footer {
+        text-align: center;
+        padding: 20px;
+        color: #94a3b8;
+        border-top: 1px solid #1e293b;
+      }
+
+      @media (max-width: 700px) {
+        .projects {
+          grid-template-columns: 1fr;
+        }
+
+        nav {
+          flex-direction: column;
+          gap: 15px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <div class="logo">My Portfolio</div>
+
+      <div>
+        <a href="/home">Home</a>
+        <a href="/project">Projects</a>
+        <a href="/registration">Register</a>
+      </div>
+    </nav>
+
+    <main class="container">
+      <h1>Projects List</h1>
+
+      <p class="intro">
+        A collection of projects developed using modern technologies.
+      </p>
+
+      <section class="projects">
+        <div class="card">
+          <h2>Personal Portfolio</h2>
+          <p>
+            A responsive portfolio website showcasing skills, projects,
+            achievements, and professional information.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Expense Manager</h2>
+          <p>
+            A web application concept for managing expenses and
+            understanding personal spending patterns.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>AI Application</h2>
+          <p>
+            An application concept exploring the use of artificial
+            intelligence to solve practical problems.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Node.js Backend</h2>
+          <p>
+            A Node.js server demonstrating backend routing and serving
+            static HTML pages.
+          </p>
+        </div>
+      </section>
+
+      <section class="registration">
+        <h2>Want to Get Started?</h2>
+
+        <p>
+          Register through the application registration page.
+        </p>
+
+        <a href="/registration" class="register-btn">
+          Go to Registration
+        </a>
+      </section>
+    </main>
+
+    <footer>
+      <p>© 2026 My Portfolio | Built with HTML, CSS & Node.js</p>
+    </footer>
+  </body>
+</html>

@@ -22,5 +22,10 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "jest": "^30.5.1"
+  },
+  "dependencies": {
+    "minimist": "^1.2.8",
+    "sequelize": "^6.37.8",
+    "sqlite3": "^6.0.1"
   }
 }

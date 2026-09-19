@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Todo Manager</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .category {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .category h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .count {
+            color: #666;
+            font-size: 18px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>My Todo List</h1>
+
+    <!-- Overdue -->
+    <section class="category">
+        <h2>
+            Overdue
+            <span class="count">(<%= overdue.length %>)</span>
+        </h2>
+
+        <%- include('todos', { todos: overdue }) %>
+    </section>
+
+    <!-- Due Today -->
+    <section class="category">
+        <h2>
+            Due Today
+            <span class="count">(<%= dueToday.length %>)</span>
+        </h2>
+
+        <%- include('todos', { todos: dueToday }) %>
+    </section>
+
+    <!-- Due Later -->
+    <section class="category">
+        <h2>
+            Due Later
+            <span class="count">(<%= dueLater.length %>)</span>
+        </h2>
+
+        <%- include('todos', { todos: dueLater }) %>
+    </section>
+
+</div>
+
+</body>
+</html>

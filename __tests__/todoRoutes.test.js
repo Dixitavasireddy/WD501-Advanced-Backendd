@@ -20,9 +20,9 @@ describe('Todo API', () => {
     });
   });
 
-  test('GET /todos should return all todos', async () => {
+  test('GET /todos should render the todo list page', async () => {
     await Todo.create({
-      title: 'Complete Milestone 6',
+      title: 'Complete Milestone 7',
       dueDate: '2026-09-20',
       completed: false
     });
@@ -31,8 +31,9 @@ describe('Todo API', () => {
       .get('/todos');
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveLength(1);
-    expect(response.body[0].title).toBe('Complete Milestone 6');
+    expect(response.headers['content-type']).toMatch(/html/);
+    expect(response.text).toContain('My Todo List');
+    expect(response.text).toContain('Complete Milestone 7');
   });
 
   test('DELETE /todos/:id should delete an existing todo', async () => {

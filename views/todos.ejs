@@ -1,0 +1,32 @@
+<% if (todos.length === 0) { %>
+
+    <p>No todos in this category.</p>
+
+<% } else { %>
+
+    <ul>
+        <% todos.forEach((todo) => { %>
+
+            <li>
+                <strong>
+                    <%= todo.id %>.
+                </strong>
+
+                <span>
+                    [<%= todo.completed ? 'x' : ' ' %>]
+                </span>
+
+                <%= todo.title.trim() %>
+
+                <% if (todo.dueDate) { %>
+                    <small>
+                        -
+                        <%= new Date(todo.dueDate).toISOString().split('T')[0] %>
+                    </small>
+                <% } %>
+            </li>
+
+        <% }); %>
+    </ul>
+
+<% } %>

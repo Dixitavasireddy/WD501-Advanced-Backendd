@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
@@ -21,9 +22,11 @@
   "homepage": "https://github.com/Dixitavasireddy/WD501-Advanced-Backendd#readme",
   "devDependencies": {
     "husky": "^9.1.7",
-    "jest": "^30.5.1"
+    "jest": "^30.5.1",
+    "supertest": "^7.2.2"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "minimist": "^1.2.8",
     "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1"

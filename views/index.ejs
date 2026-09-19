@@ -1,93 +1,311 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Todo Manager</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    <title>To-Do Manager</title>
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            color: #222;
-        }
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        .container {
-            width: 90%;
-            max-width: 900px;
-            margin: 40px auto;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-
-        .category {
-            background: white;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .category h2 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 24px;
-        }
-
-        .count {
-            color: #666;
-            font-size: 18px;
-            font-weight: normal;
-        }
-    </style>
+    <!-- Custom CSS -->
+    <link
+        rel="stylesheet"
+        href="/css/styles.css"
+    >
 </head>
 
 <body>
 
-<div class="container">
+    <main class="todo-container">
 
-    <h1>My Todo List</h1>
+        <!-- Page Title -->
+        <header class="page-header">
+            <h1>My Todo List</h1>
+        </header>
 
-    <!-- Overdue -->
-    <section class="category">
-        <h2>
-            Overdue
-            <span class="count">(<%= overdue.length %>)</span>
-        </h2>
 
-        <%- include('todos', { todos: overdue }) %>
-    </section>
+        <!-- Add Todo Form -->
+        <section class="add-todo-section">
 
-    <!-- Due Today -->
-    <section class="category">
-        <h2>
-            Due Today
-            <span class="count">(<%= dueToday.length %>)</span>
-        </h2>
+            <input
+                type="text"
+                id="todo-title"
+                class="todo-input"
+                placeholder="What's next?"
+                aria-label="Todo title"
+            >
 
-        <%- include('todos', { todos: dueToday }) %>
-    </section>
+            <input
+                type="date"
+                id="todo-date"
+                class="date-input"
+                aria-label="Todo due date"
+            >
 
-    <!-- Due Later -->
-    <section class="category">
-        <h2>
-            Due Later
-            <span class="count">(<%= dueLater.length %>)</span>
-        </h2>
+            <button
+                type="button"
+                id="add-button"
+                class="add-button"
+            >
+                Add
+            </button>
 
-        <%- include('todos', { todos: dueLater }) %>
-    </section>
+        </section>
 
-</div>
+
+        <!-- Overdue Todos -->
+        <section class="todo-section">
+
+            <div class="section-heading">
+
+                <h2>Overdue</h2>
+
+                <span class="todo-count">
+                    <%= overdue.length %>
+                </span>
+
+            </div>
+
+            <%- include('todos', { todos: overdue }) %>
+
+        </section>
+
+
+        <!-- Due Today Todos -->
+        <section class="todo-section">
+
+            <div class="section-heading">
+
+                <h2>Due Today</h2>
+
+                <span class="todo-count">
+                    <%= dueToday.length %>
+                </span>
+
+            </div>
+
+            <%- include('todos', { todos: dueToday }) %>
+
+        </section>
+
+
+        <!-- Due Later Todos -->
+        <section class="todo-section">
+
+            <div class="section-heading">
+
+                <h2>Due Later</h2>
+
+                <span class="todo-count">
+                    <%= dueLater.length %>
+                </span>
+
+            </div>
+
+            <%- include('todos', { todos: dueLater }) %>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================
+         Add and Delete Todo JavaScript
+         ========================================= -->
+
+    <script>
+
+        document.addEventListener(
+            'DOMContentLoaded',
+            () => {
+
+                // =====================================
+                // ADD TODO
+                // =====================================
+
+                const addButton =
+                    document.getElementById(
+                        'add-button'
+                    );
+
+                const titleInput =
+                    document.getElementById(
+                        'todo-title'
+                    );
+
+                const dateInput =
+                    document.getElementById(
+                        'todo-date'
+                    );
+
+
+                addButton.addEventListener(
+                    'click',
+                    async () => {
+
+                        const title =
+                            titleInput.value.trim();
+
+                        const dueDate =
+                            dateInput.value;
+
+
+                        // Check title
+                        if (!title) {
+
+                            alert(
+                                'Please enter a todo title.'
+                            );
+
+                            titleInput.focus();
+
+                            return;
+                        }
+
+
+                        // Check date
+                        if (!dueDate) {
+
+                            alert(
+                                'Please select a due date.'
+                            );
+
+                            dateInput.focus();
+
+                            return;
+                        }
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    '/todos',
+                                    {
+                                        method: 'POST',
+
+                                        headers: {
+                                            'Content-Type':
+                                                'application/json'
+                                        },
+
+                                        body: JSON.stringify({
+                                            title: title,
+                                            dueDate: dueDate
+                                        })
+                                    }
+                                );
+
+
+                            const data =
+                                await response.json();
+
+
+                            if (response.ok) {
+
+                                // Clear inputs
+                                titleInput.value = '';
+                                dateInput.value = '';
+
+                                // Reload page
+                                window.location.href =
+                                    '/todos';
+
+                            } else {
+
+                                alert(
+                                    data.error ||
+                                    'Failed to add todo.'
+                                );
+                            }
+
+                        } catch (error) {
+
+                            console.error(
+                                'Error adding todo:',
+                                error
+                            );
+
+                            alert(
+                                'Unable to connect to the server.'
+                            );
+                        }
+
+                    }
+                );
+
+
+                // =====================================
+                // DELETE TODO
+                // =====================================
+
+                const deleteButtons =
+                    document.querySelectorAll(
+                        '.delete-button'
+                    );
+
+
+                deleteButtons.forEach(
+                    (button) => {
+
+                        button.addEventListener(
+                            'click',
+                            async () => {
+
+                                const todoId =
+                                    button.dataset.id;
+
+
+                                try {
+
+                                    const response =
+                                        await fetch(
+                                            `/todos/${todoId}`,
+                                            {
+                                                method:
+                                                    'DELETE'
+                                            }
+                                        );
+
+
+                                    if (
+                                        response.ok
+                                    ) {
+
+                                        window.location.href =
+                                            '/todos';
+                                    }
+
+                                } catch (error) {
+
+                                    console.error(
+                                        'Error deleting todo:',
+                                        error
+                                    );
+
+                                    alert(
+                                        'Unable to delete todo.'
+                                    );
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    </script>
 
 </body>
+
 </html>

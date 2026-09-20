@@ -26,8 +26,12 @@
     "supertest": "^7.2.2"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "csrf-sync": "^4.2.1",
+    "csurf": "^1.11.0",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "minimist": "^1.2.8",
     "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1"

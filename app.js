@@ -1,25 +1,117 @@
+'use strict';
+
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
+const {
+    csrfSync
+} = require('csrf-sync');
 
-const { Todo } = require('./models');
+const {
+    Todo
+} = require('./models');
 
 const app = express();
 
 // ==================================================
-// Middleware
+// Basic Middleware
 // ==================================================
 
 app.use(express.json());
 
-// Serve static files from public folder
+app.use(
+    express.urlencoded({
+        extended: true
+    })
+);
+
+// ==================================================
+// Static Files
+// ==================================================
+
 app.use(
     express.static(
         path.join(__dirname, 'public')
     )
 );
 
-// Configure EJS
-app.set('view engine', 'ejs');
+// ==================================================
+// Session
+// ==================================================
+
+app.use(
+    session({
+        secret:
+            process.env.SESSION_SECRET ||
+            'todo-app-secret',
+
+        resave: false,
+
+        saveUninitialized: false,
+
+        cookie: {
+            httpOnly: true,
+            sameSite: 'lax',
+
+            secure:
+                process.env.NODE_ENV === 'production'
+        }
+    })
+);
+
+// ==================================================
+// CSRF Configuration
+// ==================================================
+
+const {
+    generateToken,
+    csrfSynchronisedProtection
+} = csrfSync({
+    getTokenFromRequest: (req) => {
+
+        // ------------------------------------------
+        // HTML form requests
+        // ------------------------------------------
+
+        if (
+            req.is(
+                'application/x-www-form-urlencoded'
+            )
+        ) {
+            return req.body._csrf;
+        }
+
+        // ------------------------------------------
+        // JSON / Fetch / AJAX requests
+        // ------------------------------------------
+
+        return req.headers['x-csrf-token'];
+    }
+});
+
+// ==================================================
+// CSRF Protection
+// ==================================================
+//
+// GET requests are allowed.
+//
+// POST, PUT and DELETE requests require
+// a valid CSRF token.
+//
+// ==================================================
+
+app.use(
+    csrfSynchronisedProtection
+);
+
+// ==================================================
+// EJS Configuration
+// ==================================================
+
+app.set(
+    'view engine',
+    'ejs'
+);
 
 app.set(
     'views',
@@ -27,142 +119,368 @@ app.set(
 );
 
 // ==================================================
-// GET /todos
-// Display all todos
+// GET /
 // ==================================================
 
-app.get('/todos', async (req, res) => {
-    try {
+app.get(
+    '/',
+    (req, res) => {
 
-        const todos = await Todo.findAll({
-            order: [
-                ['dueDate', 'ASC'],
-                ['id', 'ASC']
-            ]
-        });
+        res.redirect('/todos');
 
-        const today = new Date();
+    }
+);
 
-        today.setHours(
-            0,
-            0,
-            0,
-            0
-        );
+// ==================================================
+// GET /todos
+// ==================================================
 
-        const overdue = [];
-        const dueToday = [];
-        const dueLater = [];
+app.get(
+    '/todos',
+    async (req, res) => {
 
-        todos.forEach((todo) => {
+        try {
 
-            const dueDate = new Date(
-                todo.dueDate
-            );
+            // --------------------------------------
+            // Get all todos
+            // --------------------------------------
 
-            dueDate.setHours(
+            const todos =
+                await Todo.findAll({
+                    order: [
+                        ['dueDate', 'ASC'],
+                        ['id', 'ASC']
+                    ]
+                });
+
+            // --------------------------------------
+            // Get today's date
+            // --------------------------------------
+
+            const today =
+                new Date();
+
+            today.setHours(
                 0,
                 0,
                 0,
                 0
             );
 
-            if (dueDate < today) {
+            // --------------------------------------
+            // Active Todos
+            // --------------------------------------
 
-                overdue.push(todo);
+            const activeTodos =
+                todos.filter(
+                    (todo) =>
+                        !todo.completed
+                );
 
-            } else if (
-                dueDate.getTime() ===
-                today.getTime()
-            ) {
+            const overdue = [];
+            const dueToday = [];
+            const dueLater = [];
 
-                dueToday.push(todo);
+            // --------------------------------------
+            // Categorize active todos
+            // --------------------------------------
 
-            } else {
+            activeTodos.forEach(
+                (todo) => {
 
-                dueLater.push(todo);
-            }
-        });
+                    const dueDate =
+                        new Date(
+                            todo.dueDate
+                        );
 
-        res.render(
-            'index',
-            {
-                overdue,
-                dueToday,
-                dueLater
-            }
-        );
+                    dueDate.setHours(
+                        0,
+                        0,
+                        0,
+                        0
+                    );
 
-    } catch (error) {
+                    // Overdue
+                    if (
+                        dueDate < today
+                    ) {
 
-        console.error(
-            'Error loading todos:',
-            error
-        );
+                        overdue.push(todo);
 
-        res.status(500).send(
-            'Error loading todos: ' +
-            error.message
-        );
+                    }
+
+                    // Due Today
+                    else if (
+                        dueDate.getTime() ===
+                        today.getTime()
+                    ) {
+
+                        dueToday.push(todo);
+
+                    }
+
+                    // Due Later
+                    else {
+
+                        dueLater.push(todo);
+
+                    }
+
+                }
+            );
+
+            // --------------------------------------
+            // Completed Todos
+            // --------------------------------------
+
+            const completed =
+                todos.filter(
+                    (todo) =>
+                        todo.completed
+                );
+
+            // --------------------------------------
+            // Generate CSRF token
+            // --------------------------------------
+
+            const csrfToken =
+                generateToken(
+                    req,
+                    res
+                );
+
+            // --------------------------------------
+            // Render page
+            // --------------------------------------
+
+            return res.render(
+                'index',
+                {
+                    overdue,
+                    dueToday,
+                    dueLater,
+                    completed,
+                    csrfToken
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Error loading todos:',
+                error
+            );
+
+            return res
+                .status(500)
+                .send(
+                    'Error loading todos: ' +
+                    error.message
+                );
+
+        }
+
     }
-});
+);
 
 // ==================================================
 // POST /todos
-// Create a new todo
+// Create Todo
 // ==================================================
 
-app.post('/todos', async (req, res) => {
-    try {
+app.post(
+    '/todos',
+    async (req, res) => {
 
-        const {
-            title,
-            dueDate
-        } = req.body;
+        try {
 
-        // Validate title
-        if (
-            !title ||
-            title.trim() === ''
-        ) {
-            return res.status(400).json({
-                error: 'Todo title is required'
-            });
+            const {
+                title,
+                dueDate
+            } = req.body;
+
+            // --------------------------------------
+            // Validate input
+            // --------------------------------------
+
+            if (
+                !title ||
+                !title.trim() ||
+                !dueDate
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Title and due date are required'
+                    });
+
+            }
+
+            // --------------------------------------
+            // Create Todo
+            // --------------------------------------
+
+            const todo =
+                await Todo.create({
+
+                    title:
+                        title.trim(),
+
+                    dueDate,
+
+                    completed: false
+
+                });
+
+            // --------------------------------------
+            // JSON API response
+            // --------------------------------------
+
+            return res
+                .status(201)
+                .json(todo);
+
+        } catch (error) {
+
+            console.error(
+                'Error creating todo:',
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        error.message
+                });
+
         }
 
-        // Validate due date
-        if (!dueDate) {
-            return res.status(400).json({
-                error: 'Due date is required'
-            });
-        }
-
-        // Create Todo
-        const todo = await Todo.create({
-            title: title.trim(),
-            dueDate: dueDate,
-            completed: false
-        });
-
-        // Return created Todo
-        res.status(201).json(todo);
-
-    } catch (error) {
-
-        console.error(
-            'Error creating todo:',
-            error
-        );
-
-        res.status(500).json({
-            error: error.message
-        });
     }
-});
+);
+
+// ==================================================
+// PUT /todos/:id
+// Complete / Incomplete Todo
+// ==================================================
+
+app.put(
+    '/todos/:id',
+    async (req, res) => {
+
+        try {
+
+            // --------------------------------------
+            // Convert ID
+            // --------------------------------------
+
+            const id =
+                Number(
+                    req.params.id
+                );
+
+            // --------------------------------------
+            // Validate ID
+            // --------------------------------------
+
+            if (
+                !Number.isInteger(id) ||
+                id <= 0
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Invalid Todo ID'
+                    });
+
+            }
+
+            // --------------------------------------
+            // Get completed value
+            // --------------------------------------
+
+            const {
+                completed
+            } = req.body;
+
+            // --------------------------------------
+            // Validate completed
+            // --------------------------------------
+
+            if (
+                typeof completed !==
+                'boolean'
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'completed must be a boolean'
+                    });
+
+            }
+
+            // --------------------------------------
+            // Find Todo
+            // --------------------------------------
+
+            const todo =
+                await Todo.findByPk(id);
+
+            if (!todo) {
+
+                return res
+                    .status(404)
+                    .json({
+                        error:
+                            'Todo not found'
+                    });
+
+            }
+
+            // --------------------------------------
+            // Update completion
+            // --------------------------------------
+
+            todo.completed =
+                completed;
+
+            await todo.save();
+
+            // --------------------------------------
+            // Return updated Todo
+            // --------------------------------------
+
+            return res
+                .status(200)
+                .json(todo);
+
+        } catch (error) {
+
+            console.error(
+                'Error updating todo:',
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        error.message
+                });
+
+        }
+
+    }
+);
 
 // ==================================================
 // DELETE /todos/:id
-// Delete an existing todo
 // ==================================================
 
 app.delete(
@@ -171,16 +489,53 @@ app.delete(
 
         try {
 
+            // --------------------------------------
+            // Convert ID
+            // --------------------------------------
+
+            const id =
+                Number(
+                    req.params.id
+                );
+
+            // --------------------------------------
+            // Validate ID
+            // --------------------------------------
+
+            if (
+                !Number.isInteger(id) ||
+                id <= 0
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Invalid Todo ID'
+                    });
+
+            }
+
+            // --------------------------------------
+            // Delete Todo
+            // --------------------------------------
+
             const deletedCount =
                 await Todo.destroy({
                     where: {
-                        id: req.params.id
+                        id
                     }
                 });
 
-            res.json(
-                deletedCount > 0
-            );
+            // --------------------------------------
+            // Return result
+            // --------------------------------------
+
+            return res
+                .status(200)
+                .json(
+                    deletedCount > 0
+                );
 
         } catch (error) {
 
@@ -189,15 +544,70 @@ app.delete(
                 error
             );
 
-            res.status(500).json({
-                error: error.message
-            });
+            return res
+                .status(500)
+                .json({
+                    error:
+                        error.message
+                });
+
         }
+
     }
 );
 
 // ==================================================
-// Export app
+// CSRF Error Handler
+// ==================================================
+
+app.use(
+    (err, req, res, next) => {
+
+        if (
+            err &&
+            err.code === 'EBADCSRFTOKEN'
+        ) {
+
+            return res
+                .status(403)
+                .json({
+                    error:
+                        'Invalid or missing CSRF token'
+                });
+
+        }
+
+        return next(err);
+
+    }
+);
+
+// ==================================================
+// Start Server
+// ==================================================
+
+if (
+    require.main === module
+) {
+
+    const PORT =
+        process.env.PORT || 3000;
+
+    app.listen(
+        PORT,
+        () => {
+
+            console.log(
+                `Server running on port ${PORT}`
+            );
+
+        }
+    );
+
+}
+
+// ==================================================
+// Export app for Jest / Supertest
 // ==================================================
 
 module.exports = app;

@@ -1,7 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -19,187 +21,500 @@
         rel="stylesheet"
         href="/css/styles.css"
     >
+
 </head>
 
 <body>
 
-    <main class="todo-container">
+<main class="todo-container">
 
-        <!-- Page Title -->
-        <header class="page-header">
-            <h1>My Todo List</h1>
-        </header>
+    <!-- =========================================
+         Page Header
+         ========================================= -->
 
+    <header class="page-header">
 
-        <!-- Add Todo Form -->
-        <section class="add-todo-section">
+        <h1>
+            My Todo List
+        </h1>
 
-            <input
-                type="text"
-                id="todo-title"
-                class="todo-input"
-                placeholder="What's next?"
-                aria-label="Todo title"
-            >
-
-            <input
-                type="date"
-                id="todo-date"
-                class="date-input"
-                aria-label="Todo due date"
-            >
-
-            <button
-                type="button"
-                id="add-button"
-                class="add-button"
-            >
-                Add
-            </button>
-
-        </section>
-
-
-        <!-- Overdue Todos -->
-        <section class="todo-section">
-
-            <div class="section-heading">
-
-                <h2>Overdue</h2>
-
-                <span class="todo-count">
-                    <%= overdue.length %>
-                </span>
-
-            </div>
-
-            <%- include('todos', { todos: overdue }) %>
-
-        </section>
-
-
-        <!-- Due Today Todos -->
-        <section class="todo-section">
-
-            <div class="section-heading">
-
-                <h2>Due Today</h2>
-
-                <span class="todo-count">
-                    <%= dueToday.length %>
-                </span>
-
-            </div>
-
-            <%- include('todos', { todos: dueToday }) %>
-
-        </section>
-
-
-        <!-- Due Later Todos -->
-        <section class="todo-section">
-
-            <div class="section-heading">
-
-                <h2>Due Later</h2>
-
-                <span class="todo-count">
-                    <%= dueLater.length %>
-                </span>
-
-            </div>
-
-            <%- include('todos', { todos: dueLater }) %>
-
-        </section>
-
-    </main>
+    </header>
 
 
     <!-- =========================================
-         Add and Delete Todo JavaScript
+         Add Todo
          ========================================= -->
 
-    <script>
+    <section class="add-todo-section">
 
-        document.addEventListener(
-            'DOMContentLoaded',
-            () => {
+        <input
+            type="text"
+            id="todo-title"
+            class="todo-input"
+            placeholder="What's next?"
+            aria-label="Todo title"
+        >
 
-                // =====================================
-                // ADD TODO
-                // =====================================
+        <input
+            type="date"
+            id="todo-date"
+            class="date-input"
+            aria-label="Todo due date"
+        >
 
-                const addButton =
-                    document.getElementById(
-                        'add-button'
-                    );
+        <button
+            type="button"
+            id="add-button"
+            class="add-button"
+        >
+            Add
+        </button>
 
-                const titleInput =
-                    document.getElementById(
-                        'todo-title'
-                    );
-
-                const dateInput =
-                    document.getElementById(
-                        'todo-date'
-                    );
+    </section>
 
 
-                addButton.addEventListener(
-                    'click',
+    <!-- =========================================
+         OVERDUE
+         ========================================= -->
+
+    <section class="todo-section">
+
+        <div class="section-heading">
+
+            <h2>
+                Overdue
+            </h2>
+
+            <span class="todo-count">
+                <%= overdue.length %>
+            </span>
+
+        </div>
+
+
+        <% if (overdue.length === 0) { %>
+
+            <p class="empty-message">
+                No overdue todos.
+            </p>
+
+        <% } else { %>
+
+            <% overdue.forEach(todo => { %>
+
+                <div class="todo-item">
+
+                    <input
+                        type="checkbox"
+                        class="complete-checkbox"
+                        data-id="<%= todo.id %>"
+                        data-completed="false"
+                    >
+
+                    <span class="todo-title">
+                        <%= todo.title %>
+                    </span>
+
+                    <span class="todo-date">
+                        <%= new Date(todo.dueDate).toISOString().split('T')[0] %>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="delete-button"
+                        data-id="<%= todo.id %>"
+                    >
+                        🗑
+                    </button>
+
+                </div>
+
+            <% }) %>
+
+        <% } %>
+
+    </section>
+
+
+    <!-- =========================================
+         DUE TODAY
+         ========================================= -->
+
+    <section class="todo-section">
+
+        <div class="section-heading">
+
+            <h2>
+                Due Today
+            </h2>
+
+            <span class="todo-count">
+                <%= dueToday.length %>
+            </span>
+
+        </div>
+
+
+        <% if (dueToday.length === 0) { %>
+
+            <p class="empty-message">
+                No todos due today.
+            </p>
+
+        <% } else { %>
+
+            <% dueToday.forEach(todo => { %>
+
+                <div class="todo-item">
+
+                    <input
+                        type="checkbox"
+                        class="complete-checkbox"
+                        data-id="<%= todo.id %>"
+                        data-completed="false"
+                    >
+
+                    <span class="todo-title">
+                        <%= todo.title %>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="delete-button"
+                        data-id="<%= todo.id %>"
+                    >
+                        🗑
+                    </button>
+
+                </div>
+
+            <% }) %>
+
+        <% } %>
+
+    </section>
+
+
+    <!-- =========================================
+         DUE LATER
+         ========================================= -->
+
+    <section class="todo-section">
+
+        <div class="section-heading">
+
+            <h2>
+                Due Later
+            </h2>
+
+            <span class="todo-count">
+                <%= dueLater.length %>
+            </span>
+
+        </div>
+
+
+        <% if (dueLater.length === 0) { %>
+
+            <p class="empty-message">
+                No upcoming todos.
+            </p>
+
+        <% } else { %>
+
+            <% dueLater.forEach(todo => { %>
+
+                <div class="todo-item">
+
+                    <input
+                        type="checkbox"
+                        class="complete-checkbox"
+                        data-id="<%= todo.id %>"
+                        data-completed="false"
+                    >
+
+                    <span class="todo-title">
+                        <%= todo.title %>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="delete-button"
+                        data-id="<%= todo.id %>"
+                    >
+                        🗑
+                    </button>
+
+                </div>
+
+            <% }) %>
+
+        <% } %>
+
+    </section>
+
+
+    <!-- =========================================
+         COMPLETED
+         ========================================= -->
+
+    <section class="todo-section completed-section">
+
+        <div class="section-heading">
+
+            <h2>
+                Completed
+            </h2>
+
+            <span class="todo-count">
+                <%= completed.length %>
+            </span>
+
+        </div>
+
+
+        <% if (completed.length === 0) { %>
+
+            <p class="empty-message">
+                No completed todos.
+            </p>
+
+        <% } else { %>
+
+            <% completed.forEach(todo => { %>
+
+                <div class="todo-item completed-item">
+
+                    <input
+                        type="checkbox"
+                        class="complete-checkbox"
+                        data-id="<%= todo.id %>"
+                        data-completed="true"
+                        checked
+                    >
+
+                    <span class="todo-title completed-title">
+                        <%= todo.title %>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="delete-button"
+                        data-id="<%= todo.id %>"
+                    >
+                        🗑
+                    </button>
+
+                </div>
+
+            <% }) %>
+
+        <% } %>
+
+    </section>
+
+</main>
+
+
+<!-- =========================================
+     CSRF TOKEN
+     ========================================= -->
+
+<script>
+
+    const csrfToken =
+        <%- JSON.stringify(csrfToken) %>;
+
+</script>
+
+
+<script>
+
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+
+
+        // =========================================
+        // ADD TODO
+        // =========================================
+
+        const addButton =
+            document.getElementById(
+                'add-button'
+            );
+
+        const titleInput =
+            document.getElementById(
+                'todo-title'
+            );
+
+        const dateInput =
+            document.getElementById(
+                'todo-date'
+            );
+
+
+        if (addButton) {
+
+            addButton.addEventListener(
+                'click',
+                async () => {
+
+                    const title =
+                        titleInput.value.trim();
+
+                    const dueDate =
+                        dateInput.value;
+
+
+                    // Validate title
+
+                    if (!title) {
+
+                        alert(
+                            'Please enter a todo title.'
+                        );
+
+                        titleInput.focus();
+
+                        return;
+                    }
+
+
+                    // Validate date
+
+                    if (!dueDate) {
+
+                        alert(
+                            'Please select a due date.'
+                        );
+
+                        dateInput.focus();
+
+                        return;
+                    }
+
+
+                    try {
+
+                        const response =
+                            await fetch(
+                                '/todos',
+                                {
+                                    method: 'POST',
+
+                                    headers: {
+                                        'Content-Type':
+                                            'application/json',
+
+                                        'x-csrf-token':
+                                            csrfToken
+                                    },
+
+                                    body:
+                                        JSON.stringify({
+                                            title:
+                                                title,
+
+                                            dueDate:
+                                                dueDate
+                                        })
+                                }
+                            );
+
+
+                        const data =
+                            await response.json();
+
+
+                        if (response.ok) {
+
+                            titleInput.value = '';
+
+                            dateInput.value = '';
+
+                            window.location.href =
+                                '/todos';
+
+                        } else {
+
+                            alert(
+                                data.error ||
+                                'Failed to add todo.'
+                            );
+
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            'Error adding todo:',
+                            error
+                        );
+
+                        alert(
+                            'Unable to connect to the server.'
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        // =========================================
+        // COMPLETE / UNCOMPLETE TODO
+        // =========================================
+
+        const checkboxes =
+            document.querySelectorAll(
+                '.complete-checkbox'
+            );
+
+
+        checkboxes.forEach(
+            (checkbox) => {
+
+                checkbox.addEventListener(
+                    'change',
                     async () => {
 
-                        const title =
-                            titleInput.value.trim();
+                        const todoId =
+                            checkbox.dataset.id;
 
-                        const dueDate =
-                            dateInput.value;
-
-
-                        // Check title
-                        if (!title) {
-
-                            alert(
-                                'Please enter a todo title.'
-                            );
-
-                            titleInput.focus();
-
-                            return;
-                        }
+                        const currentlyCompleted =
+                            checkbox.dataset.completed ===
+                            'true';
 
 
-                        // Check date
-                        if (!dueDate) {
-
-                            alert(
-                                'Please select a due date.'
-                            );
-
-                            dateInput.focus();
-
-                            return;
-                        }
+                        const newCompletedStatus =
+                            !currentlyCompleted;
 
 
                         try {
 
                             const response =
                                 await fetch(
-                                    '/todos',
+                                    `/todos/${todoId}`,
                                     {
-                                        method: 'POST',
+                                        method: 'PUT',
 
                                         headers: {
                                             'Content-Type':
-                                                'application/json'
+                                                'application/json',
+
+                                            'x-csrf-token':
+                                                csrfToken
                                         },
 
-                                        body: JSON.stringify({
-                                            title: title,
-                                            dueDate: dueDate
-                                        })
+                                        body:
+                                            JSON.stringify({
+                                                completed:
+                                                    newCompletedStatus
+                                            })
                                     }
                                 );
 
@@ -210,11 +525,6 @@
 
                             if (response.ok) {
 
-                                // Clear inputs
-                                titleInput.value = '';
-                                dateInput.value = '';
-
-                                // Reload page
                                 window.location.href =
                                     '/todos';
 
@@ -222,81 +532,28 @@
 
                                 alert(
                                     data.error ||
-                                    'Failed to add todo.'
+                                    'Failed to update todo.'
                                 );
+
+                                checkbox.checked =
+                                    currentlyCompleted;
                             }
 
                         } catch (error) {
 
                             console.error(
-                                'Error adding todo:',
+                                'Error updating todo:',
                                 error
                             );
 
                             alert(
-                                'Unable to connect to the server.'
+                                'Unable to update todo.'
                             );
+
+                            checkbox.checked =
+                                currentlyCompleted;
+
                         }
-
-                    }
-                );
-
-
-                // =====================================
-                // DELETE TODO
-                // =====================================
-
-                const deleteButtons =
-                    document.querySelectorAll(
-                        '.delete-button'
-                    );
-
-
-                deleteButtons.forEach(
-                    (button) => {
-
-                        button.addEventListener(
-                            'click',
-                            async () => {
-
-                                const todoId =
-                                    button.dataset.id;
-
-
-                                try {
-
-                                    const response =
-                                        await fetch(
-                                            `/todos/${todoId}`,
-                                            {
-                                                method:
-                                                    'DELETE'
-                                            }
-                                        );
-
-
-                                    if (
-                                        response.ok
-                                    ) {
-
-                                        window.location.href =
-                                            '/todos';
-                                    }
-
-                                } catch (error) {
-
-                                    console.error(
-                                        'Error deleting todo:',
-                                        error
-                                    );
-
-                                    alert(
-                                        'Unable to delete todo.'
-                                    );
-                                }
-
-                            }
-                        );
 
                     }
                 );
@@ -304,7 +561,85 @@
             }
         );
 
-    </script>
+
+        // =========================================
+        // DELETE TODO
+        // =========================================
+
+        const deleteButtons =
+            document.querySelectorAll(
+                '.delete-button'
+            );
+
+
+        deleteButtons.forEach(
+            (button) => {
+
+                button.addEventListener(
+                    'click',
+                    async () => {
+
+                        const todoId =
+                            button.dataset.id;
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    `/todos/${todoId}`,
+                                    {
+                                        method: 'DELETE',
+
+                                        headers: {
+                                            'x-csrf-token':
+                                                csrfToken
+                                        }
+                                    }
+                                );
+
+
+                            const data =
+                                await response.json();
+
+
+                            if (response.ok) {
+
+                                window.location.href =
+                                    '/todos';
+
+                            } else {
+
+                                alert(
+                                    data.error ||
+                                    'Failed to delete todo.'
+                                );
+
+                            }
+
+                        } catch (error) {
+
+                            console.error(
+                                'Error deleting todo:',
+                                error
+                            );
+
+                            alert(
+                                'Unable to delete todo.'
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 </body>
 

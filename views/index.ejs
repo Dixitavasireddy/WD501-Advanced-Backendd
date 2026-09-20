@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -21,7 +19,6 @@
         rel="stylesheet"
         href="/css/styles.css"
     >
-
 </head>
 
 <body>
@@ -33,11 +30,9 @@
          ========================================= -->
 
     <header class="page-header">
-
         <h1>
             My Todo List
         </h1>
-
     </header>
 
 
@@ -322,6 +317,11 @@
 
 <script>
 
+    /*
+     * JSON.stringify safely converts the server-side
+     * CSRF token into a JavaScript string.
+     */
+
     const csrfToken =
         <%- JSON.stringify(csrfToken) %>;
 
@@ -333,7 +333,6 @@
 document.addEventListener(
     'DOMContentLoaded',
     () => {
-
 
         // =========================================
         // ADD TODO
@@ -404,22 +403,34 @@ document.addEventListener(
                                 {
                                     method: 'POST',
 
+                                    /*
+                                     * Important for production:
+                                     * sends the Express session cookie.
+                                     */
+
+                                    credentials: 'same-origin',
+
                                     headers: {
+
                                         'Content-Type':
                                             'application/json',
 
                                         'x-csrf-token':
                                             csrfToken
+
                                     },
 
                                     body:
                                         JSON.stringify({
+
                                             title:
                                                 title,
 
                                             dueDate:
                                                 dueDate
+
                                         })
+
                                 }
                             );
 
@@ -485,6 +496,7 @@ document.addEventListener(
                         const todoId =
                             checkbox.dataset.id;
 
+
                         const currentlyCompleted =
                             checkbox.dataset.completed ===
                             'true';
@@ -502,19 +514,31 @@ document.addEventListener(
                                     {
                                         method: 'PUT',
 
+                                        /*
+                                         * Important for production:
+                                         * sends the Express session cookie.
+                                         */
+
+                                        credentials: 'same-origin',
+
                                         headers: {
+
                                             'Content-Type':
                                                 'application/json',
 
                                             'x-csrf-token':
                                                 csrfToken
+
                                         },
 
                                         body:
                                             JSON.stringify({
+
                                                 completed:
                                                     newCompletedStatus
+
                                             })
+
                                     }
                                 );
 
@@ -535,8 +559,10 @@ document.addEventListener(
                                     'Failed to update todo.'
                                 );
 
+
                                 checkbox.checked =
                                     currentlyCompleted;
+
                             }
 
                         } catch (error) {
@@ -546,9 +572,11 @@ document.addEventListener(
                                 error
                             );
 
+
                             alert(
                                 'Unable to update todo.'
                             );
+
 
                             checkbox.checked =
                                 currentlyCompleted;
@@ -583,6 +611,23 @@ document.addEventListener(
                             button.dataset.id;
 
 
+                        /*
+                         * Optional confirmation
+                         */
+
+                        const confirmed =
+                            confirm(
+                                'Are you sure you want to delete this todo?'
+                            );
+
+
+                        if (!confirmed) {
+
+                            return;
+
+                        }
+
+
                         try {
 
                             const response =
@@ -591,10 +636,20 @@ document.addEventListener(
                                     {
                                         method: 'DELETE',
 
+                                        /*
+                                         * Important for production:
+                                         * sends the Express session cookie.
+                                         */
+
+                                        credentials: 'same-origin',
+
                                         headers: {
+
                                             'x-csrf-token':
                                                 csrfToken
+
                                         }
+
                                     }
                                 );
 
@@ -624,6 +679,7 @@ document.addEventListener(
                                 error
                             );
 
+
                             alert(
                                 'Unable to delete todo.'
                             );
@@ -637,6 +693,7 @@ document.addEventListener(
         );
 
     }
+
 );
 
 </script>

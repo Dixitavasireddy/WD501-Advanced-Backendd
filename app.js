@@ -3,6 +3,7 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+
 const {
     csrfSync
 } = require('csrf-sync');
@@ -14,7 +15,7 @@ const {
 const app = express();
 
 // ==================================================
-// Basic Middleware
+// BASIC MIDDLEWARE
 // ==================================================
 
 app.use(express.json());
@@ -26,7 +27,7 @@ app.use(
 );
 
 // ==================================================
-// Static Files
+// STATIC FILES
 // ==================================================
 
 app.use(
@@ -36,7 +37,7 @@ app.use(
 );
 
 // ==================================================
-// Session
+// SESSION
 // ==================================================
 
 app.use(
@@ -60,7 +61,7 @@ app.use(
 );
 
 // ==================================================
-// CSRF Configuration
+// CSRF CONFIGURATION
 // ==================================================
 
 const {
@@ -69,10 +70,7 @@ const {
 } = csrfSync({
     getTokenFromRequest: (req) => {
 
-        // ------------------------------------------
-        // HTML form requests
-        // ------------------------------------------
-
+        // Form requests
         if (
             req.is(
                 'application/x-www-form-urlencoded'
@@ -81,23 +79,13 @@ const {
             return req.body._csrf;
         }
 
-        // ------------------------------------------
         // JSON / Fetch / AJAX requests
-        // ------------------------------------------
-
         return req.headers['x-csrf-token'];
     }
 });
 
 // ==================================================
-// CSRF Protection
-// ==================================================
-//
-// GET requests are allowed.
-//
-// POST, PUT and DELETE requests require
-// a valid CSRF token.
-//
+// CSRF PROTECTION
 // ==================================================
 
 app.use(
@@ -105,7 +93,7 @@ app.use(
 );
 
 // ==================================================
-// EJS Configuration
+// EJS CONFIGURATION
 // ==================================================
 
 app.set(
@@ -168,7 +156,7 @@ app.get(
             );
 
             // --------------------------------------
-            // Active Todos
+            // Active todos
             // --------------------------------------
 
             const activeTodos =
@@ -230,7 +218,7 @@ app.get(
             );
 
             // --------------------------------------
-            // Completed Todos
+            // Completed todos
             // --------------------------------------
 
             const completed =
@@ -277,15 +265,13 @@ app.get(
                     'Error loading todos: ' +
                     error.message
                 );
-
         }
-
     }
 );
 
 // ==================================================
 // POST /todos
-// Create Todo
+// CREATE TODO
 // ==================================================
 
 app.post(
@@ -315,7 +301,6 @@ app.post(
                         error:
                             'Title and due date are required'
                     });
-
             }
 
             // --------------------------------------
@@ -335,7 +320,7 @@ app.post(
                 });
 
             // --------------------------------------
-            // JSON API response
+            // Return created Todo
             // --------------------------------------
 
             return res
@@ -355,15 +340,13 @@ app.post(
                     error:
                         error.message
                 });
-
         }
-
     }
 );
 
 // ==================================================
 // PUT /todos/:id
-// Complete / Incomplete Todo
+// COMPLETE / INCOMPLETE TODO
 // ==================================================
 
 app.put(
@@ -396,7 +379,6 @@ app.put(
                         error:
                             'Invalid Todo ID'
                     });
-
             }
 
             // --------------------------------------
@@ -422,7 +404,6 @@ app.put(
                         error:
                             'completed must be a boolean'
                     });
-
             }
 
             // --------------------------------------
@@ -440,7 +421,6 @@ app.put(
                         error:
                             'Todo not found'
                     });
-
             }
 
             // --------------------------------------
@@ -473,9 +453,7 @@ app.put(
                     error:
                         error.message
                 });
-
         }
-
     }
 );
 
@@ -509,11 +487,7 @@ app.delete(
 
                 return res
                     .status(400)
-                    .json({
-                        error:
-                            'Invalid Todo ID'
-                    });
-
+                    .json(false);
             }
 
             // --------------------------------------
@@ -528,7 +502,14 @@ app.delete(
                 });
 
             // --------------------------------------
-            // Return result
+            // IMPORTANT
+            //
+            // Existing Jest tests expect:
+            //
+            // Existing Todo  -> true
+            // Missing Todo    -> false
+            //
+            // Both return HTTP 200.
             // --------------------------------------
 
             return res
@@ -550,14 +531,12 @@ app.delete(
                     error:
                         error.message
                 });
-
         }
-
     }
 );
 
 // ==================================================
-// CSRF Error Handler
+// CSRF ERROR HANDLER
 // ==================================================
 
 app.use(
@@ -574,16 +553,14 @@ app.use(
                     error:
                         'Invalid or missing CSRF token'
                 });
-
         }
 
         return next(err);
-
     }
 );
 
 // ==================================================
-// Start Server
+// START SERVER
 // ==================================================
 
 if (
@@ -603,11 +580,10 @@ if (
 
         }
     );
-
 }
 
 // ==================================================
-// Export app for Jest / Supertest
+// EXPORT APP FOR JEST / SUPERTEST
 // ==================================================
 
 module.exports = app;

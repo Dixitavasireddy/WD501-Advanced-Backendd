@@ -8,7 +8,7 @@
     "storage": "database.test.sqlite"
   },
   "production": {
-    "dialect": "sqlite",
-    "storage": "database.sqlite"
+    "dialect": "postgres",
+    "use_env_variable": "DATABASE_URL"
   }
 }

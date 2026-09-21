@@ -1,8 +1,8 @@
 {
   "name": "hello-node",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Todo application with Express, Sequelize, SQLite and CSRF protection",
+  "main": "server.js",
   "scripts": {
     "test": "jest",
     "start": "node server.js",

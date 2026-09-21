@@ -3,21 +3,24 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const { csrfSync } = require('csrf-sync');
 
-const {
-    csrfSync
-} = require('csrf-sync');
-
-const {
-    Todo
-} = require('./models');
+const { Todo } = require('./models');
 
 const app = express();
 
-// ==================================================
-// BASIC MIDDLEWARE
-// ==================================================
+/*
+==================================================
+RENDER / HTTPS PROXY
+==================================================
+*/
+app.set('trust proxy', 1);
 
+/*
+==================================================
+BODY PARSING
+==================================================
+*/
 app.use(express.json());
 
 app.use(
@@ -26,51 +29,62 @@ app.use(
     })
 );
 
-// ==================================================
-// STATIC FILES
-// ==================================================
-
+/*
+==================================================
+STATIC FILES
+==================================================
+*/
 app.use(
     express.static(
         path.join(__dirname, 'public')
     )
 );
 
-// ==================================================
-// SESSION
-// ==================================================
-
+/*
+==================================================
+SESSION
+==================================================
+*/
 app.use(
     session({
         secret:
             process.env.SESSION_SECRET ||
-            'todo-app-secret',
+            'todo-app-secret-change-this',
 
         resave: false,
 
-        saveUninitialized: false,
+        saveUninitialized: true,
+
+        proxy: true,
 
         cookie: {
             httpOnly: true,
-            sameSite: 'lax',
 
             secure:
-                process.env.NODE_ENV === 'production'
+                process.env.NODE_ENV === 'production',
+
+            sameSite: 'lax',
+
+            maxAge:
+                24 * 60 * 60 * 1000
         }
     })
 );
 
-// ==================================================
-// CSRF CONFIGURATION
-// ==================================================
-
+/*
+==================================================
+CSRF
+==================================================
+*/
 const {
     generateToken,
     csrfSynchronisedProtection
 } = csrfSync({
     getTokenFromRequest: (req) => {
 
-        // Form requests
+        /*
+        HTML FORM
+        */
         if (
             req.is(
                 'application/x-www-form-urlencoded'
@@ -79,23 +93,30 @@ const {
             return req.body._csrf;
         }
 
-        // JSON / Fetch / AJAX requests
-        return req.headers['x-csrf-token'];
+        /*
+        FETCH / JSON
+        */
+        return (
+            req.headers['x-csrf-token'] ||
+            req.headers['csrf-token']
+        );
     }
 });
 
-// ==================================================
-// CSRF PROTECTION
-// ==================================================
-
+/*
+==================================================
+CSRF PROTECTION
+==================================================
+*/
 app.use(
     csrfSynchronisedProtection
 );
 
-// ==================================================
-// EJS CONFIGURATION
-// ==================================================
-
+/*
+==================================================
+EJS
+==================================================
+*/
 app.set(
     'view engine',
     'ejs'
@@ -106,32 +127,28 @@ app.set(
     path.join(__dirname, 'views')
 );
 
-// ==================================================
-// GET /
-// ==================================================
-
+/*
+==================================================
+HOME
+==================================================
+*/
 app.get(
     '/',
     (req, res) => {
-
         res.redirect('/todos');
-
     }
 );
 
-// ==================================================
-// GET /todos
-// ==================================================
-
+/*
+==================================================
+GET TODOS
+==================================================
+*/
 app.get(
     '/todos',
     async (req, res) => {
 
         try {
-
-            // --------------------------------------
-            // Get all todos
-            // --------------------------------------
 
             const todos =
                 await Todo.findAll({
@@ -141,12 +158,13 @@ app.get(
                     ]
                 });
 
-            // --------------------------------------
-            // Get today's date
-            // --------------------------------------
+            /*
+            ------------------------------------------
+            TODAY
+            ------------------------------------------
+            */
 
-            const today =
-                new Date();
+            const today = new Date();
 
             today.setHours(
                 0,
@@ -155,26 +173,29 @@ app.get(
                 0
             );
 
-            // --------------------------------------
-            // Active todos
-            // --------------------------------------
+            /*
+            ------------------------------------------
+            ACTIVE
+            ------------------------------------------
+            */
 
             const activeTodos =
                 todos.filter(
-                    (todo) =>
-                        !todo.completed
+                    todo => !todo.completed
                 );
 
             const overdue = [];
             const dueToday = [];
             const dueLater = [];
 
-            // --------------------------------------
-            // Categorize active todos
-            // --------------------------------------
+            /*
+            ------------------------------------------
+            CATEGORIZE
+            ------------------------------------------
+            */
 
             activeTodos.forEach(
-                (todo) => {
+                todo => {
 
                     const dueDate =
                         new Date(
@@ -188,48 +209,42 @@ app.get(
                         0
                     );
 
-                    // Overdue
                     if (
                         dueDate < today
                     ) {
 
                         overdue.push(todo);
 
-                    }
-
-                    // Due Today
-                    else if (
+                    } else if (
                         dueDate.getTime() ===
                         today.getTime()
                     ) {
 
                         dueToday.push(todo);
 
-                    }
-
-                    // Due Later
-                    else {
+                    } else {
 
                         dueLater.push(todo);
-
                     }
-
                 }
             );
 
-            // --------------------------------------
-            // Completed todos
-            // --------------------------------------
+            /*
+            ------------------------------------------
+            COMPLETED
+            ------------------------------------------
+            */
 
             const completed =
                 todos.filter(
-                    (todo) =>
-                        todo.completed
+                    todo => todo.completed
                 );
 
-            // --------------------------------------
-            // Generate CSRF token
-            // --------------------------------------
+            /*
+            ------------------------------------------
+            CSRF TOKEN
+            ------------------------------------------
+            */
 
             const csrfToken =
                 generateToken(
@@ -237,9 +252,11 @@ app.get(
                     res
                 );
 
-            // --------------------------------------
-            // Render page
-            // --------------------------------------
+            /*
+            ------------------------------------------
+            RENDER
+            ------------------------------------------
+            */
 
             return res.render(
                 'index',
@@ -269,11 +286,11 @@ app.get(
     }
 );
 
-// ==================================================
-// POST /todos
-// CREATE TODO
-// ==================================================
-
+/*
+==================================================
+CREATE TODO
+==================================================
+*/
 app.post(
     '/todos',
     async (req, res) => {
@@ -284,10 +301,6 @@ app.post(
                 title,
                 dueDate
             } = req.body;
-
-            // --------------------------------------
-            // Validate input
-            // --------------------------------------
 
             if (
                 !title ||
@@ -303,25 +316,15 @@ app.post(
                     });
             }
 
-            // --------------------------------------
-            // Create Todo
-            // --------------------------------------
-
             const todo =
                 await Todo.create({
-
                     title:
                         title.trim(),
 
                     dueDate,
 
                     completed: false
-
                 });
-
-            // --------------------------------------
-            // Return created Todo
-            // --------------------------------------
 
             return res
                 .status(201)
@@ -344,29 +347,21 @@ app.post(
     }
 );
 
-// ==================================================
-// PUT /todos/:id
-// COMPLETE / INCOMPLETE TODO
-// ==================================================
-
+/*
+==================================================
+UPDATE TODO
+==================================================
+*/
 app.put(
     '/todos/:id',
     async (req, res) => {
 
         try {
 
-            // --------------------------------------
-            // Convert ID
-            // --------------------------------------
-
             const id =
                 Number(
                     req.params.id
                 );
-
-            // --------------------------------------
-            // Validate ID
-            // --------------------------------------
 
             if (
                 !Number.isInteger(id) ||
@@ -381,17 +376,9 @@ app.put(
                     });
             }
 
-            // --------------------------------------
-            // Get completed value
-            // --------------------------------------
-
             const {
                 completed
             } = req.body;
-
-            // --------------------------------------
-            // Validate completed
-            // --------------------------------------
 
             if (
                 typeof completed !==
@@ -406,10 +393,6 @@ app.put(
                     });
             }
 
-            // --------------------------------------
-            // Find Todo
-            // --------------------------------------
-
             const todo =
                 await Todo.findByPk(id);
 
@@ -423,18 +406,10 @@ app.put(
                     });
             }
 
-            // --------------------------------------
-            // Update completion
-            // --------------------------------------
-
             todo.completed =
                 completed;
 
             await todo.save();
-
-            // --------------------------------------
-            // Return updated Todo
-            // --------------------------------------
 
             return res
                 .status(200)
@@ -457,28 +432,21 @@ app.put(
     }
 );
 
-// ==================================================
-// DELETE /todos/:id
-// ==================================================
-
+/*
+==================================================
+DELETE TODO
+==================================================
+*/
 app.delete(
     '/todos/:id',
     async (req, res) => {
 
         try {
 
-            // --------------------------------------
-            // Convert ID
-            // --------------------------------------
-
             const id =
                 Number(
                     req.params.id
                 );
-
-            // --------------------------------------
-            // Validate ID
-            // --------------------------------------
 
             if (
                 !Number.isInteger(id) ||
@@ -486,13 +454,9 @@ app.delete(
             ) {
 
                 return res
-                    .status(400)
+                    .status(200)
                     .json(false);
             }
-
-            // --------------------------------------
-            // Delete Todo
-            // --------------------------------------
 
             const deletedCount =
                 await Todo.destroy({
@@ -500,17 +464,6 @@ app.delete(
                         id
                     }
                 });
-
-            // --------------------------------------
-            // IMPORTANT
-            //
-            // Existing Jest tests expect:
-            //
-            // Existing Todo  -> true
-            // Missing Todo    -> false
-            //
-            // Both return HTTP 200.
-            // --------------------------------------
 
             return res
                 .status(200)
@@ -535,10 +488,11 @@ app.delete(
     }
 );
 
-// ==================================================
-// CSRF ERROR HANDLER
-// ==================================================
-
+/*
+==================================================
+CSRF ERROR HANDLER
+==================================================
+*/
 app.use(
     (err, req, res, next) => {
 
@@ -546,6 +500,27 @@ app.use(
             err &&
             err.code === 'EBADCSRFTOKEN'
         ) {
+
+            console.error(
+                'CSRF ERROR:',
+                {
+                    method:
+                        req.method,
+
+                    url:
+                        req.originalUrl,
+
+                    hasSession:
+                        !!req.session,
+
+                    hasToken:
+                        !!(
+                            req.headers[
+                                'x-csrf-token'
+                            ]
+                        )
+                }
+            );
 
             return res
                 .status(403)
@@ -559,10 +534,33 @@ app.use(
     }
 );
 
-// ==================================================
-// START SERVER
-// ==================================================
+/*
+==================================================
+GENERAL ERROR HANDLER
+==================================================
+*/
+app.use(
+    (err, req, res, next) => {
 
+        console.error(
+            'Unhandled error:',
+            err
+        );
+
+        return res
+            .status(500)
+            .json({
+                error:
+                    'Internal server error'
+            });
+    }
+);
+
+/*
+==================================================
+START SERVER
+==================================================
+*/
 if (
     require.main === module
 ) {
@@ -582,8 +580,9 @@ if (
     );
 }
 
-// ==================================================
-// EXPORT APP FOR JEST / SUPERTEST
-// ==================================================
-
+/*
+==================================================
+EXPORT
+==================================================
+*/
 module.exports = app;

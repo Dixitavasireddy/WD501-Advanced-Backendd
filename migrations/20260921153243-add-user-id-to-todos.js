@@ -1,37 +1,29 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.addColumn(
+      'todos',
+      'user_id',
+      {
+        type: Sequelize.INTEGER,
+        allowNull: false,
 
-    async up(queryInterface, Sequelize) {
+        references: {
+          model: 'users',
+          key: 'id'
+        },
 
-        await queryInterface.addColumn(
-            'todos',
-            'user_id',
-            {
-                type: Sequelize.INTEGER,
-                allowNull: true,
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      }
+    );
+  },
 
-                references: {
-                    model: 'Users',
-                    key: 'id'
-                },
-
-                onUpdate: 'CASCADE',
-
-                onDelete: 'CASCADE'
-            }
-        );
-
-    },
-
-    async down(queryInterface, Sequelize) {
-
-        await queryInterface.removeColumn(
-            'todos',
-            'user_id'
-        );
-
-    }
-
+  async down(queryInterface) {
+    await queryInterface.removeColumn(
+      'todos',
+      'user_id'
+    );
+  }
 };

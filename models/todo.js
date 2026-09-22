@@ -16,8 +16,10 @@ module.exports = (sequelize, DataTypes) => {
             return await Todo.create({
                 title: params.title,
                 dueDate: params.dueDate,
-                completed: false
+                completed: false,
+                user_id: params.user_id
             });
+
         }
 
         // ==========================================
@@ -37,40 +39,26 @@ module.exports = (sequelize, DataTypes) => {
             console.log('My Todo-list');
             console.log();
 
-            // Get today's date
             const today = new Date();
 
-            today.setHours(
-                0,
-                0,
-                0,
-                0
-            );
+            today.setHours(0, 0, 0, 0);
 
-            // Divide todos into sections
             const overdue = [];
             const dueToday = [];
             const dueLater = [];
 
             todos.forEach((todo) => {
 
-                const dueDate =
-                    new Date(todo.dueDate);
+                const dueDate = new Date(todo.dueDate);
 
-                dueDate.setHours(
-                    0,
-                    0,
-                    0,
-                    0
-                );
+                dueDate.setHours(0, 0, 0, 0);
 
                 if (dueDate < today) {
 
                     overdue.push(todo);
 
                 } else if (
-                    dueDate.getTime() ===
-                    today.getTime()
+                    dueDate.getTime() === today.getTime()
                 ) {
 
                     dueToday.push(todo);
@@ -78,11 +66,13 @@ module.exports = (sequelize, DataTypes) => {
                 } else {
 
                     dueLater.push(todo);
+
                 }
+
             });
 
             // ==========================================
-            // Overdue
+            // OVERDUE
             // ==========================================
 
             console.log('Overdue');
@@ -97,7 +87,7 @@ module.exports = (sequelize, DataTypes) => {
             });
 
             // ==========================================
-            // Due Today
+            // DUE TODAY
             // ==========================================
 
             console.log();
@@ -113,7 +103,7 @@ module.exports = (sequelize, DataTypes) => {
             });
 
             // ==========================================
-            // Due Later
+            // DUE LATER
             // ==========================================
 
             console.log();
@@ -127,40 +117,46 @@ module.exports = (sequelize, DataTypes) => {
                 );
 
             });
+
         }
 
         // ==========================================
         // Milestone 9
         // Set Todo completion status
         // ==========================================
-        //
-        // Usage:
-        //
-        // await todo.setCompletionStatus(true);
-        //
-        // true  -> completed
-        // false -> incomplete
-        //
-        // ==========================================
 
         async setCompletionStatus(completed) {
 
-            // Validate that completed is a boolean
             if (typeof completed !== 'boolean') {
 
                 throw new Error(
                     'completed must be a boolean'
                 );
+
             }
 
-            // Update the current Todo instance
             this.completed = completed;
 
-            // Save the change to database
             await this.save();
 
             return this;
+
         }
+
+        // ==========================================
+        // Milestone 10
+        // Todo belongs to User
+        // ==========================================
+
+        static associate(models) {
+
+            Todo.belongsTo(models.User, {
+                foreignKey: 'user_id',
+                as: 'user'
+            });
+
+        }
+
     }
 
     // ==========================================
@@ -170,24 +166,65 @@ module.exports = (sequelize, DataTypes) => {
     Todo.init(
         {
             title: {
+
                 type: DataTypes.STRING,
-                allowNull: false
+
+                allowNull: false,
+
+                validate: {
+
+                    notNull: {
+                        msg: 'Todo title is required'
+                    },
+
+                    notEmpty: {
+                        msg: 'Todo title cannot be empty'
+                    },
+
+                    len: {
+                        args: [5, 255],
+                        msg: 'Todo title must be between 5 and 255 characters'
+                    }
+
+                }
+
             },
 
             dueDate: {
+
                 type: DataTypes.DATE,
+
                 allowNull: false
+
             },
 
             completed: {
+
                 type: DataTypes.BOOLEAN,
+
                 allowNull: false,
+
                 defaultValue: false
+
+            },
+
+            user_id: {
+
+                type: DataTypes.INTEGER,
+
+                allowNull: false
+
             }
+
         },
         {
             sequelize,
-            modelName: 'Todo'
+
+            modelName: 'Todo',
+
+            tableName: 'todos',
+
+            timestamps: true
         }
     );
 
@@ -207,12 +244,10 @@ function formatDate(date) {
         d.getFullYear();
 
     const month =
-        String(d.getMonth() + 1)
-            .padStart(2, '0');
+        String(d.getMonth() + 1).padStart(2, '0');
 
     const day =
-        String(d.getDate())
-            .padStart(2, '0');
+        String(d.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
 }

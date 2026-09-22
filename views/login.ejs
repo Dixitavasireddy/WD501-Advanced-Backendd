@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Login - To-Do Manager</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css"
+    >
+</head>
+
+<body>
+
+<main class="auth-container">
+
+    <section class="auth-card">
+
+        <div class="auth-header">
+
+            <h1>
+                Welcome Back
+            </h1>
+
+            <p>
+                Login to manage your todos.
+            </p>
+
+        </div>
+
+
+        <!-- ==========================================
+             FLASH ERROR MESSAGE
+        =========================================== -->
+
+        <% if (
+            messages &&
+            messages.error &&
+            messages.error.length > 0
+        ) { %>
+
+            <div class="error-message">
+
+                <%= messages.error[0] %>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- ==========================================
+             FLASH SUCCESS MESSAGE
+        =========================================== -->
+
+        <% if (
+            messages &&
+            messages.success &&
+            messages.success.length > 0
+        ) { %>
+
+            <div class="success-message">
+
+                <%= messages.success[0] %>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- ==========================================
+             LOGIN FORM
+        =========================================== -->
+
+        <form
+            action="/session"
+            method="POST"
+            class="auth-form"
+        >
+
+            <!-- CSRF TOKEN -->
+
+            <input
+                type="hidden"
+                name="_csrf"
+                value="<%= csrfToken %>"
+            >
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                    autocomplete="email"
+                >
+
+            </div>
+
+
+            <!-- PASSWORD -->
+
+            <div class="form-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password"
+                >
+
+            </div>
+
+
+            <!-- LOGIN BUTTON -->
+
+            <button
+                type="submit"
+                class="auth-button"
+            >
+                Login
+            </button>
+
+        </form>
+
+
+        <!-- ==========================================
+             FOOTER
+        =========================================== -->
+
+        <div class="auth-footer">
+
+            <p>
+
+                Don't have an account?
+
+                <a href="/signup">
+                    Create an account
+                </a>
+
+            </p>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- ==========================================
+     CSRF TOKEN FOR TESTS / JAVASCRIPT
+=========================================== -->
+
+<script>
+
+    const csrfToken =
+        <%- JSON.stringify(csrfToken) %>;
+
+</script>
+
+</body>
+
+</html>

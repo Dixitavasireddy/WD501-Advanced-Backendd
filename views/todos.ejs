@@ -16,14 +16,18 @@
             <div class="todo-content">
 
                 <!-- Checkbox -->
+
                 <input
                     type="checkbox"
                     id="todo-<%= todo.id %>"
                     class="todo-checkbox"
+                    data-id="<%= todo.id %>"
                     <%= todo.completed ? 'checked' : '' %>
                 >
 
+
                 <!-- Todo Title -->
+
                 <label
                     for="todo-<%= todo.id %>"
                     class="todo-label <%= todo.completed ? 'completed' : '' %>"
@@ -34,7 +38,21 @@
             </div>
 
 
+            <!-- Due Date -->
+
+            <% if (todo.dueDate) { %>
+
+                <span class="todo-date">
+                    <%= new Date(todo.dueDate)
+                        .toISOString()
+                        .split('T')[0] %>
+                </span>
+
+            <% } %>
+
+
             <!-- Delete Button -->
+
             <button
                 type="button"
                 class="delete-button"

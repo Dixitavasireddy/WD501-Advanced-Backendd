@@ -1,0 +1,42 @@
+<% if (typeof message !== 'undefined' && message) { %>
+
+    <div class="notification notification-success" role="alert">
+
+        <span class="notification-message">
+            <%= message %>
+        </span>
+
+        <button
+            type="button"
+            class="notification-close"
+            onclick="this.parentElement.remove()"
+            aria-label="Close notification"
+        >
+            &times;
+        </button>
+
+    </div>
+
+<% } %>
+
+
+<% if (typeof error !== 'undefined' && error) { %>
+
+    <div class="notification notification-error" role="alert">
+
+        <span class="notification-message">
+            <%= error %>
+        </span>
+
+        <button
+            type="button"
+            class="notification-close"
+            onclick="this.parentElement.remove()"
+            aria-label="Close notification"
+        >
+            &times;
+        </button>
+
+    </div>
+
+<% } %>

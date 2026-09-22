@@ -1,26 +1,30 @@
-'use strict';
-
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const passport = require('passport');
+const flash = require('connect-flash');
 const { csrfSync } = require('csrf-sync');
 
 const { Todo } = require('./models');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
-/*
-==================================================
-RENDER / HTTPS PROXY
-==================================================
-*/
-app.set('trust proxy', 1);
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
 
-/*
-==================================================
-BODY PARSING
-==================================================
-*/
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
+/* =========================================================
+   BODY PARSING
+   ========================================================= */
+
 app.use(express.json());
 
 app.use(
@@ -29,22 +33,20 @@ app.use(
     })
 );
 
-/*
-==================================================
-STATIC FILES
-==================================================
-*/
+/* =========================================================
+   STATIC FILES
+   ========================================================= */
+
 app.use(
     express.static(
         path.join(__dirname, 'public')
     )
 );
 
-/*
-==================================================
-SESSION
-==================================================
-*/
+/* =========================================================
+   SESSION
+   ========================================================= */
+
 app.use(
     session({
         secret:
@@ -55,7 +57,8 @@ app.use(
 
         saveUninitialized: true,
 
-        proxy: true,
+        proxy:
+            process.env.NODE_ENV === 'production',
 
         cookie: {
             httpOnly: true,
@@ -71,98 +74,150 @@ app.use(
     })
 );
 
-/*
-==================================================
-CSRF
-==================================================
-*/
+/* =========================================================
+   PASSPORT
+   ========================================================= */
+
+require('./config/passport');
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+/* =========================================================
+   FLASH
+   ========================================================= */
+
+app.use(flash());
+
+/* =========================================================
+   CSRF CONFIGURATION
+   ========================================================= */
+
 const {
     generateToken,
     csrfSynchronisedProtection
 } = csrfSync({
     getTokenFromRequest: (req) => {
-
-        /*
-        HTML FORM
-        */
         if (
-            req.is(
-                'application/x-www-form-urlencoded'
-            )
+            req.body &&
+            typeof req.body._csrf === 'string'
         ) {
             return req.body._csrf;
         }
 
-        /*
-        FETCH / JSON
-        */
         return (
             req.headers['x-csrf-token'] ||
-            req.headers['csrf-token']
+            req.headers['csrf-token'] ||
+            req.headers['xsrf-token'] ||
+            req.headers['x-xsrf-token']
         );
+    },
+
+    storeTokenInState: (req, token) => {
+        req.session.csrfToken = token;
+    },
+
+    getTokenFromState: (req) => {
+        return req.session.csrfToken;
     }
 });
 
-/*
-==================================================
-CSRF PROTECTION
-==================================================
-*/
+/* =========================================================
+   GLOBAL LOCALS + CSRF TOKEN
+   ========================================================= */
+
+app.use(
+    (req, res, next) => {
+        res.locals.messages = req.flash();
+
+        res.locals.currentUser =
+            req.user || null;
+
+        res.locals.csrfToken =
+            generateToken(req);
+
+        next();
+    }
+);
+
+/* =========================================================
+   CSRF PROTECTION
+   ========================================================= */
+
 app.use(
     csrfSynchronisedProtection
 );
 
-/*
-==================================================
-EJS
-==================================================
-*/
-app.set(
-    'view engine',
-    'ejs'
+/* =========================================================
+   AUTH ROUTES
+   ========================================================= */
+
+app.use(
+    '/',
+    authRoutes
 );
 
-app.set(
-    'views',
-    path.join(__dirname, 'views')
-);
+/* =========================================================
+   AUTHENTICATION MIDDLEWARE
+   ========================================================= */
 
-/*
-==================================================
-HOME
-==================================================
-*/
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+
+    req.flash(
+        'error',
+        'Please sign in to continue.'
+    );
+
+    return res.redirect('/login');
+}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
 app.get(
     '/',
     (req, res) => {
-        res.redirect('/todos');
+
+        /*
+         * If already logged in,
+         * go to Todo Manager.
+         */
+        if (req.isAuthenticated()) {
+            return res.redirect('/todos');
+        }
+
+        /*
+         * If not logged in,
+         * START WITH CREATE ACCOUNT.
+         */
+        return res.redirect('/signup');
     }
 );
 
-/*
-==================================================
-GET TODOS
-==================================================
-*/
+/* =========================================================
+   GET /todos
+   ========================================================= */
+
 app.get(
     '/todos',
+    ensureAuthenticated,
     async (req, res) => {
-
         try {
-
             const todos =
                 await Todo.findAll({
+                    where: {
+                        user_id: req.user.id
+                    },
+
                     order: [
                         ['dueDate', 'ASC'],
                         ['id', 'ASC']
                     ]
                 });
-
-            /*
-            ------------------------------------------
-            TODAY
-            ------------------------------------------
-            */
 
             const today = new Date();
 
@@ -173,90 +228,41 @@ app.get(
                 0
             );
 
-            /*
-            ------------------------------------------
-            ACTIVE
-            ------------------------------------------
-            */
-
-            const activeTodos =
-                todos.filter(
-                    todo => !todo.completed
-                );
-
             const overdue = [];
             const dueToday = [];
             const dueLater = [];
+            const completed = [];
 
-            /*
-            ------------------------------------------
-            CATEGORIZE
-            ------------------------------------------
-            */
+            for (const todo of todos) {
 
-            activeTodos.forEach(
-                todo => {
-
-                    const dueDate =
-                        new Date(
-                            todo.dueDate
-                        );
-
-                    dueDate.setHours(
-                        0,
-                        0,
-                        0,
-                        0
-                    );
-
-                    if (
-                        dueDate < today
-                    ) {
-
-                        overdue.push(todo);
-
-                    } else if (
-                        dueDate.getTime() ===
-                        today.getTime()
-                    ) {
-
-                        dueToday.push(todo);
-
-                    } else {
-
-                        dueLater.push(todo);
-                    }
+                if (todo.completed) {
+                    completed.push(todo);
+                    continue;
                 }
-            );
 
-            /*
-            ------------------------------------------
-            COMPLETED
-            ------------------------------------------
-            */
+                const dueDate =
+                    new Date(todo.dueDate);
 
-            const completed =
-                todos.filter(
-                    todo => todo.completed
+                dueDate.setHours(
+                    0,
+                    0,
+                    0,
+                    0
                 );
 
-            /*
-            ------------------------------------------
-            CSRF TOKEN
-            ------------------------------------------
-            */
+                if (dueDate < today) {
+                    overdue.push(todo);
 
-            const csrfToken =
-                generateToken(
-                    req,
-                    res
-                );
+                } else if (
+                    dueDate.getTime() ===
+                    today.getTime()
+                ) {
+                    dueToday.push(todo);
 
-            /*
-            ------------------------------------------
-            RENDER
-            ------------------------------------------
-            */
+                } else {
+                    dueLater.push(todo);
+                }
+            }
 
             return res.render(
                 'index',
@@ -265,7 +271,8 @@ app.get(
                     dueToday,
                     dueLater,
                     completed,
-                    csrfToken
+                    csrfToken:
+                        res.locals.csrfToken
                 }
             );
 
@@ -279,22 +286,21 @@ app.get(
             return res
                 .status(500)
                 .send(
-                    'Error loading todos: ' +
-                    error.message
+                    'Error loading todos'
                 );
         }
     }
 );
 
-/*
-==================================================
-CREATE TODO
-==================================================
-*/
+/* =========================================================
+   CREATE TODO
+   POST /todos
+   ========================================================= */
+
 app.post(
     '/todos',
+    ensureAuthenticated,
     async (req, res) => {
-
         try {
 
             const {
@@ -303,11 +309,10 @@ app.post(
             } = req.body;
 
             if (
-                !title ||
+                typeof title !== 'string' ||
                 !title.trim() ||
                 !dueDate
             ) {
-
                 return res
                     .status(400)
                     .json({
@@ -318,12 +323,10 @@ app.post(
 
             const todo =
                 await Todo.create({
-                    title:
-                        title.trim(),
-
+                    title: title.trim(),
                     dueDate,
-
-                    completed: false
+                    completed: false,
+                    user_id: req.user.id
                 });
 
             return res
@@ -338,7 +341,7 @@ app.post(
             );
 
             return res
-                .status(500)
+                .status(400)
                 .json({
                     error:
                         error.message
@@ -347,27 +350,24 @@ app.post(
     }
 );
 
-/*
-==================================================
-UPDATE TODO
-==================================================
-*/
+/* =========================================================
+   UPDATE TODO
+   PUT /todos/:id
+   ========================================================= */
+
 app.put(
     '/todos/:id',
+    ensureAuthenticated,
     async (req, res) => {
-
         try {
 
             const id =
-                Number(
-                    req.params.id
-                );
+                Number(req.params.id);
 
             if (
                 !Number.isInteger(id) ||
                 id <= 0
             ) {
-
                 return res
                     .status(400)
                     .json({
@@ -381,10 +381,8 @@ app.put(
             } = req.body;
 
             if (
-                typeof completed !==
-                'boolean'
+                typeof completed !== 'boolean'
             ) {
-
                 return res
                     .status(400)
                     .json({
@@ -394,10 +392,15 @@ app.put(
             }
 
             const todo =
-                await Todo.findByPk(id);
+                await Todo.findOne({
+                    where: {
+                        id,
+                        user_id:
+                            req.user.id
+                    }
+                });
 
             if (!todo) {
-
                 return res
                     .status(404)
                     .json({
@@ -432,36 +435,38 @@ app.put(
     }
 );
 
-/*
-==================================================
-DELETE TODO
-==================================================
-*/
+/* =========================================================
+   DELETE TODO
+   DELETE /todos/:id
+   ========================================================= */
+
 app.delete(
     '/todos/:id',
+    ensureAuthenticated,
     async (req, res) => {
-
         try {
 
             const id =
-                Number(
-                    req.params.id
-                );
+                Number(req.params.id);
 
             if (
                 !Number.isInteger(id) ||
                 id <= 0
             ) {
-
                 return res
-                    .status(200)
-                    .json(false);
+                    .status(400)
+                    .json({
+                        error:
+                            'Invalid Todo ID'
+                    });
             }
 
             const deletedCount =
                 await Todo.destroy({
                     where: {
-                        id
+                        id,
+                        user_id:
+                            req.user.id
                     }
                 });
 
@@ -488,11 +493,10 @@ app.delete(
     }
 );
 
-/*
-==================================================
-CSRF ERROR HANDLER
-==================================================
-*/
+/* =========================================================
+   CSRF ERROR HANDLER
+   ========================================================= */
+
 app.use(
     (err, req, res, next) => {
 
@@ -502,7 +506,7 @@ app.use(
         ) {
 
             console.error(
-                'CSRF ERROR:',
+                'CSRF validation failed:',
                 {
                     method:
                         req.method,
@@ -513,11 +517,21 @@ app.use(
                     hasSession:
                         !!req.session,
 
-                    hasToken:
+                    hasRequestToken:
                         !!(
                             req.headers[
                                 'x-csrf-token'
-                            ]
+                            ] ||
+                            req.headers[
+                                'csrf-token'
+                            ] ||
+                            req.body?._csrf
+                        ),
+
+                    hasSessionToken:
+                        !!(
+                            req.session &&
+                            req.session.csrfToken
                         )
                 }
             );
@@ -534,16 +548,15 @@ app.use(
     }
 );
 
-/*
-==================================================
-GENERAL ERROR HANDLER
-==================================================
-*/
+/* =========================================================
+   GENERAL ERROR HANDLER
+   ========================================================= */
+
 app.use(
     (err, req, res, next) => {
 
         console.error(
-            'Unhandled error:',
+            'Unhandled application error:',
             err
         );
 
@@ -556,14 +569,11 @@ app.use(
     }
 );
 
-/*
-==================================================
-START SERVER
-==================================================
-*/
-if (
-    require.main === module
-) {
+/* =========================================================
+   START SERVER
+   ========================================================= */
+
+if (require.main === module) {
 
     const PORT =
         process.env.PORT || 3000;
@@ -571,18 +581,15 @@ if (
     app.listen(
         PORT,
         () => {
-
             console.log(
-                `Server running on port ${PORT}`
+                'Server running on port ' + PORT
             );
-
         }
     );
 }
 
-/*
-==================================================
-EXPORT
-==================================================
-*/
+/* =========================================================
+   EXPORT
+   ========================================================= */
+
 module.exports = app;

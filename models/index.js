@@ -7,6 +7,7 @@ const process = require('process');
 
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
+
 const config = require(__dirname + '/../config/config.json')[env];
 
 const db = {};
@@ -14,9 +15,17 @@ const db = {};
 let sequelize;
 
 if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  sequelize = new Sequelize(
+    process.env[config.use_env_variable],
+    config
+  );
 } else {
-  sequelize = new Sequelize(config);
+  sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    config
+  );
 }
 
 fs
@@ -25,8 +34,8 @@ fs
     return (
       file.indexOf('.') !== 0 &&
       file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
+      file.endsWith('.js') &&
+      file !== 'test.js'
     );
   })
   .forEach(file => {
@@ -39,7 +48,7 @@ fs
   });
 
 Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
+  if (typeof db[modelName].associate === 'function') {
     db[modelName].associate(db);
   }
 });

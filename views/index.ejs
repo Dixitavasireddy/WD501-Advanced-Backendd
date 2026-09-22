@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -17,14 +18,27 @@
         rel="stylesheet"
         href="/css/styles.css"
     >
+
 </head>
 
 <body>
 
 <main class="todo-container">
 
-    <!-- HEADER -->
+    <!-- ==========================================
+         HEADER
+    =========================================== -->
+<form action="/logout" method="POST">
+    <input
+        type="hidden"
+        name="_csrf"
+        value="<%= csrfToken %>"
+    >
 
+    <button type="submit">
+        Logout
+    </button>
+</form>
     <header class="page-header">
 
         <h1>
@@ -34,7 +48,9 @@
     </header>
 
 
-    <!-- ADD TODO -->
+    <!-- ==========================================
+         ADD TODO
+    =========================================== -->
 
     <section class="add-todo-section">
 
@@ -64,7 +80,9 @@
     </section>
 
 
-    <!-- OVERDUE -->
+    <!-- ==========================================
+         OVERDUE
+    =========================================== -->
 
     <section class="todo-section">
 
@@ -105,7 +123,11 @@
                     </span>
 
                     <span class="todo-date">
-                        <%= new Date(todo.dueDate).toISOString().split('T')[0] %>
+
+                        <%= new Date(todo.dueDate)
+                            .toISOString()
+                            .split('T')[0] %>
+
                     </span>
 
                     <button
@@ -125,7 +147,9 @@
     </section>
 
 
-    <!-- DUE TODAY -->
+    <!-- ==========================================
+         DUE TODAY
+    =========================================== -->
 
     <section class="todo-section">
 
@@ -182,7 +206,9 @@
     </section>
 
 
-    <!-- DUE LATER -->
+    <!-- ==========================================
+         DUE LATER
+    =========================================== -->
 
     <section class="todo-section">
 
@@ -222,6 +248,14 @@
                         <%= todo.title %>
                     </span>
 
+                    <span class="todo-date">
+
+                        <%= new Date(todo.dueDate)
+                            .toISOString()
+                            .split('T')[0] %>
+
+                    </span>
+
                     <button
                         type="button"
                         class="delete-button"
@@ -239,7 +273,9 @@
     </section>
 
 
-    <!-- COMPLETED -->
+    <!-- ==========================================
+         COMPLETED
+    =========================================== -->
 
     <section class="todo-section completed-section">
 
@@ -299,13 +335,20 @@
 </main>
 
 
-<!-- CSRF TOKEN -->
+<!-- ==========================================
+     CSRF TOKEN
+=========================================== -->
 
 <script>
-    const csrfToken =
-        <%- JSON.stringify(csrfToken) %>;
+
+    const csrfToken = '<%= csrfToken %>';
+
 </script>
 
+
+<!-- ==========================================
+     JAVASCRIPT
+=========================================== -->
 
 <script>
 
@@ -313,11 +356,10 @@ document.addEventListener(
     'DOMContentLoaded',
     () => {
 
-        /*
-        ==========================================
-        ADD TODO
-        ==========================================
-        */
+
+        // ==========================================
+        // ADD TODO
+        // ==========================================
 
         const addButton =
             document.getElementById(
@@ -378,13 +420,13 @@ document.addEventListener(
                             await fetch(
                                 '/todos',
                                 {
-                                    method:
-                                        'POST',
+                                    method: 'POST',
 
                                     credentials:
                                         'same-origin',
 
                                     headers: {
+
                                         'Content-Type':
                                             'application/json',
 
@@ -394,11 +436,13 @@ document.addEventListener(
 
                                     body:
                                         JSON.stringify({
+
                                             title:
                                                 title,
 
                                             dueDate:
                                                 dueDate
+
                                         })
                                 }
                             );
@@ -410,11 +454,9 @@ document.addEventListener(
 
                         if (response.ok) {
 
-                            titleInput.value =
-                                '';
+                            titleInput.value = '';
 
-                            dateInput.value =
-                                '';
+                            dateInput.value = '';
 
                             window.location.href =
                                 '/todos';
@@ -445,11 +487,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ==========================================
-        COMPLETE / UNCOMPLETE
-        ==========================================
-        */
+        // ==========================================
+        // COMPLETE / UNCOMPLETE TODO
+        // ==========================================
 
         const checkboxes =
             document.querySelectorAll(
@@ -483,6 +523,7 @@ document.addEventListener(
                                 await fetch(
                                     `/todos/${todoId}`,
                                     {
+
                                         method:
                                             'PUT',
 
@@ -490,18 +531,23 @@ document.addEventListener(
                                             'same-origin',
 
                                         headers: {
+
                                             'Content-Type':
                                                 'application/json',
 
                                             'x-csrf-token':
                                                 csrfToken
+
                                         },
 
                                         body:
                                             JSON.stringify({
+
                                                 completed:
                                                     newCompletedStatus
+
                                             })
+
                                     }
                                 );
 
@@ -548,11 +594,9 @@ document.addEventListener(
         );
 
 
-        /*
-        ==========================================
-        DELETE TODO
-        ==========================================
-        */
+        // ==========================================
+        // DELETE TODO
+        // ==========================================
 
         const deleteButtons =
             document.querySelectorAll(
@@ -588,6 +632,7 @@ document.addEventListener(
                                 await fetch(
                                     `/todos/${todoId}`,
                                     {
+
                                         method:
                                             'DELETE',
 
@@ -595,9 +640,12 @@ document.addEventListener(
                                             'same-origin',
 
                                         headers: {
+
                                             'x-csrf-token':
                                                 csrfToken
+
                                         }
+
                                     }
                                 );
 

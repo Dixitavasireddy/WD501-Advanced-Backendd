@@ -1,0 +1,71 @@
+<li class="todo-item <%= todo.completed ? 'completed-item' : '' %>">
+
+    <!-- TODO CONTENT -->
+
+    <div class="todo-content">
+
+        <!-- CHECKBOX -->
+
+        <input
+            type="checkbox"
+            id="todo-<%= todo.id %>"
+            class="todo-checkbox"
+            data-id="<%= todo.id %>"
+            <%= todo.completed ? 'checked' : '' %>
+        >
+
+
+        <!-- TODO TITLE -->
+
+        <label
+            for="todo-<%= todo.id %>"
+            class="todo-label <%= todo.completed ? 'completed' : '' %>"
+        >
+            <%= todo.title %>
+        </label>
+
+
+        <!-- DUE DATE -->
+
+        <% if (todo.dueDate) { %>
+
+            <span class="todo-date">
+                <%= new Date(todo.dueDate)
+                    .toISOString()
+                    .split('T')[0] %>
+            </span>
+
+        <% } %>
+
+    </div>
+
+
+    <!-- DELETE BUTTON -->
+
+    <button
+        type="button"
+        class="delete-button"
+        data-id="<%= todo.id %>"
+        title="Delete todo"
+        aria-label="Delete <%= todo.title %>"
+    >
+
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+        >
+
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v12a2 2 0 01-2 2H9a2 2 0 01-2-2V7m3 4v6m4-6v6"
+            />
+
+        </svg>
+
+    </button>
+
+</li>

@@ -1,343 +1,896 @@
+
 process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
+const bcrypt = require('bcrypt');
+
 const app = require('../app');
-const { Todo, sequelize } = require('../models');
+
+const {
+    Todo,
+    User,
+    sequelize
+} = require('../models');
+
 
 describe('Todo API', () => {
 
-  // ==================================================
-  // DATABASE SETUP
-  // ==================================================
 
-  beforeAll(async () => {
-    await sequelize.sync({ force: true });
-  });
+    // ============================================================
+    // DATABASE SETUP
+    // ============================================================
 
-  afterAll(async () => {
-    await sequelize.close();
-  });
+    beforeAll(async () => {
 
-  beforeEach(async () => {
-    await Todo.destroy({
-      where: {},
-      truncate: true
-    });
-  });
+        await sequelize.sync({
+            force: true
+        });
 
-  // ==================================================
-  // GET /todos
-  // ==================================================
-
-  test('GET /todos should render the todo list page', async () => {
-
-    await Todo.create({
-      title: 'Complete Milestone 9',
-      dueDate: '2026-09-20',
-      completed: false
     });
 
-    const response = await request(app)
-      .get('/todos');
 
-    expect(response.statusCode).toBe(200);
+    afterAll(async () => {
 
-    expect(
-      response.headers['content-type']
-    ).toMatch(/html/);
+        await sequelize.close();
 
-    expect(response.text).toContain(
-      'My Todo List'
-    );
-
-    expect(response.text).toContain(
-      'Complete Milestone 9'
-    );
-  });
-
-  // ==================================================
-  // CSRF TOKEN HELPER
-  // ==================================================
-
-  async function getCsrfToken(agent) {
-
-    const response = await agent
-      .get('/todos');
-
-    expect(response.statusCode).toBe(200);
-
-    /*
-     * The index.ejs page should contain:
-     *
-     * const csrfToken = 'TOKEN';
-     */
-
-    const tokenMatch = response.text.match(
-      /const csrfToken\s*=\s*['"]([^'"]+)['"]/
-    );
-
-    expect(tokenMatch).not.toBeNull();
-
-    return tokenMatch[1];
-  }
-
-  // ==================================================
-  // POST /todos
-  // ==================================================
-
-  test('POST /todos should reject request without CSRF token', async () => {
-
-    const agent = request.agent(app);
-
-    /*
-     * Create the session first.
-     */
-    await agent.get('/todos');
-
-    const response = await agent
-      .post('/todos')
-      .send({
-        title: 'CSRF Create Test',
-        dueDate: '2026-09-20'
-      });
-
-    /*
-     * Request must be rejected.
-     */
-    expect(response.statusCode).toBe(403);
-
-    /*
-     * Todo must not be created.
-     */
-    const todo = await Todo.findOne({
-      where: {
-        title: 'CSRF Create Test'
-      }
     });
 
-    expect(todo).toBeNull();
-  });
 
-  test('POST /todos should accept a valid CSRF token', async () => {
+    beforeEach(async () => {
 
-    const agent = request.agent(app);
+        await Todo.destroy({
+            where: {},
+            truncate: true
+        });
 
-    const csrfToken = await getCsrfToken(agent);
 
-    const response = await agent
-      .post('/todos')
-      .set('x-csrf-token', csrfToken)
-      .send({
-        title: 'Valid CSRF Todo',
-        dueDate: '2026-09-20'
-      });
+        await User.destroy({
+            where: {},
+            truncate: true
+        });
 
-    expect(response.statusCode).toBe(201);
-
-    expect(response.body.title).toBe(
-      'Valid CSRF Todo'
-    );
-
-    expect(response.body.completed).toBe(false);
-
-    /*
-     * Verify database record.
-     */
-    const todo = await Todo.findByPk(
-      response.body.id
-    );
-
-    expect(todo).not.toBeNull();
-
-    expect(todo.title).toBe(
-      'Valid CSRF Todo'
-    );
-  });
-
-  // ==================================================
-  // PUT /todos/:id
-  // ==================================================
-
-  test('PUT /todos/:id should reject request without CSRF token', async () => {
-
-    const agent = request.agent(app);
-
-    /*
-     * Establish session.
-     */
-    await agent.get('/todos');
-
-    const todo = await Todo.create({
-      title: 'CSRF Update Test',
-      dueDate: '2026-09-20',
-      completed: false
     });
 
-    const response = await agent
-      .put(`/todos/${todo.id}`)
-      .send({
-        completed: true
-      });
 
-    /*
-     * Request must be rejected.
-     */
-    expect(response.statusCode).toBe(403);
+    // ============================================================
+    // TEST USER
+    // ============================================================
 
-    /*
-     * Todo must remain incomplete.
-     */
-    const unchangedTodo = await Todo.findByPk(
-      todo.id
+    async function createTestUser(
+        email = 'test@example.com'
+    ) {
+
+        const hashedPassword =
+            await bcrypt.hash(
+                'password123',
+                10
+            );
+
+
+        return await User.create({
+
+            first_name:
+                'Test',
+
+            last_name:
+                'User',
+
+            email:
+                email,
+
+            password:
+                hashedPassword
+
+        });
+
+    }
+
+
+    // ============================================================
+    // GET CSRF TOKEN
+    // ============================================================
+
+    async function getCsrfToken(agent) {
+
+        /*
+         * Your auth.js must provide:
+         *
+         * GET /session/new
+         *
+         * This page must contain:
+         *
+         * const csrfToken = "....";
+         */
+
+        const response =
+            await agent.get(
+                '/session/new'
+            );
+
+
+        expect(
+            response.statusCode
+        ).toBe(200);
+
+
+        const tokenMatch =
+            response.text.match(
+                /const csrfToken\s*=\s*['"]([^'"]+)['"]/
+            );
+
+
+        expect(
+            tokenMatch
+        ).not.toBeNull();
+
+
+        return tokenMatch[1];
+    }
+
+
+    // ============================================================
+    // LOGIN HELPER
+    // ============================================================
+
+    async function login(
+        agent,
+        user
+    ) {
+
+        /*
+         * First load the login page.
+         * This creates the session and CSRF token.
+         */
+
+        const csrfToken =
+            await getCsrfToken(
+                agent
+            );
+
+
+        /*
+         * Submit login.
+         */
+
+        const loginResponse =
+            await agent
+                .post('/session')
+                .set(
+                    'x-csrf-token',
+                    csrfToken
+                )
+                .send({
+
+                    email:
+                        user.email,
+
+                    password:
+                        'password123'
+
+                });
+
+
+        /*
+         * Passport should redirect
+         * after successful login.
+         */
+
+        expect([
+            302,
+            303
+        ]).toContain(
+            loginResponse.statusCode
+        );
+
+
+        return csrfToken;
+    }
+
+
+    // ============================================================
+    // GET /todos
+    // ============================================================
+
+    test(
+        'GET /todos should render the todo list page',
+        async () => {
+
+            const user =
+                await createTestUser();
+
+
+            const agent =
+                request.agent(app);
+
+
+            await login(
+                agent,
+                user
+            );
+
+
+            await Todo.create({
+
+                title:
+                    'Complete Milestone 9',
+
+                dueDate:
+                    '2026-09-20',
+
+                completed:
+                    false,
+
+                user_id:
+                    user.id
+
+            });
+
+
+            const response =
+                await agent.get(
+                    '/todos'
+                );
+
+
+            expect(
+                response.statusCode
+            ).toBe(200);
+
+
+            expect(
+                response.headers['content-type']
+            ).toMatch(/html/);
+
+
+            expect(
+                response.text
+            ).toContain(
+                'My Todo List'
+            );
+
+
+            expect(
+                response.text
+            ).toContain(
+                'Complete Milestone 9'
+            );
+
+        }
     );
 
-    expect(unchangedTodo).not.toBeNull();
 
-    expect(unchangedTodo.completed).toBe(
-      false
-    );
-  });
+    // ============================================================
+    // POST /todos WITHOUT CSRF
+    // ============================================================
 
-  test('PUT /todos/:id should accept a valid CSRF token', async () => {
+    test(
+        'POST /todos should reject request without CSRF token',
+        async () => {
 
-    const agent = request.agent(app);
+            const user =
+                await createTestUser();
 
-    const csrfToken = await getCsrfToken(agent);
 
-    const todo = await Todo.create({
-      title: 'Valid CSRF Update',
-      dueDate: '2026-09-20',
-      completed: false
-    });
+            const agent =
+                request.agent(app);
 
-    const response = await agent
-      .put(`/todos/${todo.id}`)
-      .set('x-csrf-token', csrfToken)
-      .send({
-        completed: true
-      });
 
-    expect(response.statusCode).toBe(200);
+            await login(
+                agent,
+                user
+            );
 
-    expect(response.body.completed).toBe(
-      true
-    );
 
-    /*
-     * Verify database.
-     */
-    const updatedTodo = await Todo.findByPk(
-      todo.id
-    );
+            const response =
+                await agent
+                    .post('/todos')
+                    .send({
 
-    expect(updatedTodo).not.toBeNull();
+                        title:
+                            'CSRF Create Test',
 
-    expect(updatedTodo.completed).toBe(
-      true
-    );
-  });
+                        dueDate:
+                            '2026-09-20'
 
-  // ==================================================
-  // DELETE /todos/:id
-  // ==================================================
+                    });
 
-  test('DELETE /todos/:id should reject request without CSRF token', async () => {
 
-    const agent = request.agent(app);
+            expect(
+                response.statusCode
+            ).toBe(403);
 
-    /*
-     * Establish session.
-     */
-    await agent.get('/todos');
 
-    const todo = await Todo.create({
-      title: 'CSRF Delete Test',
-      dueDate: '2026-09-20',
-      completed: false
-    });
+            const todo =
+                await Todo.findOne({
 
-    const response = await agent
-      .delete(`/todos/${todo.id}`);
+                    where: {
+                        title:
+                            'CSRF Create Test'
+                    }
 
-    /*
-     * Request must be rejected.
-     */
-    expect(response.statusCode).toBe(403);
+                });
 
-    /*
-     * Todo must still exist.
-     */
-    const existingTodo = await Todo.findByPk(
-      todo.id
+
+            expect(
+                todo
+            ).toBeNull();
+
+        }
     );
 
-    expect(existingTodo).not.toBeNull();
-  });
 
-  test('DELETE /todos/:id should delete an existing todo with valid CSRF token', async () => {
+    // ============================================================
+    // POST /todos WITH CSRF
+    // ============================================================
 
-    const agent = request.agent(app);
+    test(
+        'POST /todos should accept a valid CSRF token',
+        async () => {
 
-    const csrfToken = await getCsrfToken(agent);
+            const user =
+                await createTestUser();
 
-    const todo = await Todo.create({
-      title: 'Todo to delete',
-      dueDate: '2026-09-20',
-      completed: false
-    });
 
-    const response = await agent
-      .delete(`/todos/${todo.id}`)
-      .set('x-csrf-token', csrfToken);
+            const agent =
+                request.agent(app);
 
-    expect(response.statusCode).toBe(200);
 
-    expect(response.body).toBe(true);
+            const csrfToken =
+                await login(
+                    agent,
+                    user
+                );
 
-    /*
-     * Verify deletion.
-     */
-    const deletedTodo = await Todo.findByPk(
-      todo.id
+
+            const response =
+                await agent
+                    .post('/todos')
+                    .set(
+                        'x-csrf-token',
+                        csrfToken
+                    )
+                    .send({
+
+                        title:
+                            'Valid CSRF Todo',
+
+                        dueDate:
+                            '2026-09-20'
+
+                    });
+
+
+            expect(
+                response.statusCode
+            ).toBe(201);
+
+
+            expect(
+                response.body.title
+            ).toBe(
+                'Valid CSRF Todo'
+            );
+
+
+            expect(
+                response.body.completed
+            ).toBe(false);
+
+
+            const todo =
+                await Todo.findByPk(
+                    response.body.id
+                );
+
+
+            expect(
+                todo
+            ).not.toBeNull();
+
+
+            expect(
+                todo.title
+            ).toBe(
+                'Valid CSRF Todo'
+            );
+
+
+            expect(
+                todo.user_id
+            ).toBe(
+                user.id
+            );
+
+        }
     );
 
-    expect(deletedTodo).toBeNull();
-  });
 
-  test('DELETE /todos/:id should return false when todo does not exist with valid CSRF token', async () => {
+    // ============================================================
+    // PUT /todos/:id WITHOUT CSRF
+    // ============================================================
 
-    const agent = request.agent(app);
+    test(
+        'PUT /todos/:id should reject request without CSRF token',
+        async () => {
 
-    const csrfToken = await getCsrfToken(agent);
+            const user =
+                await createTestUser();
 
-    const response = await agent
-      .delete('/todos/999999')
-      .set('x-csrf-token', csrfToken);
 
-    expect(response.statusCode).toBe(200);
+            const agent =
+                request.agent(app);
 
-    expect(response.body).toBe(false);
-  });
 
-  // ==================================================
-  // CSRF TOKEN GENERATION
-  // ==================================================
+            await login(
+                agent,
+                user
+            );
 
-  test('GET /todos should generate a CSRF token', async () => {
 
-    const agent = request.agent(app);
+            const todo =
+                await Todo.create({
 
-    const response = await agent
-      .get('/todos');
+                    title:
+                        'CSRF Update Test',
 
-    expect(response.statusCode).toBe(200);
+                    dueDate:
+                        '2026-09-20',
 
-    /*
-     * Verify that the page contains a CSRF token.
-     */
-    expect(response.text).toMatch(
-      /const csrfToken\s*=\s*['"]([^'"]+)['"]/
+                    completed:
+                        false,
+
+                    user_id:
+                        user.id
+
+                });
+
+
+            const response =
+                await agent
+                    .put(
+                        `/todos/${todo.id}`
+                    )
+                    .send({
+
+                        completed:
+                            true
+
+                    });
+
+
+            expect(
+                response.statusCode
+            ).toBe(403);
+
+
+            const unchangedTodo =
+                await Todo.findByPk(
+                    todo.id
+                );
+
+
+            expect(
+                unchangedTodo
+            ).not.toBeNull();
+
+
+            expect(
+                unchangedTodo.completed
+            ).toBe(false);
+
+        }
     );
-  });
+
+
+    // ============================================================
+    // PUT /todos/:id WITH CSRF
+    // ============================================================
+
+    test(
+        'PUT /todos/:id should accept a valid CSRF token',
+        async () => {
+
+            const user =
+                await createTestUser();
+
+
+            const agent =
+                request.agent(app);
+
+
+            const csrfToken =
+                await login(
+                    agent,
+                    user
+                );
+
+
+            const todo =
+                await Todo.create({
+
+                    title:
+                        'Valid CSRF Update',
+
+                    dueDate:
+                        '2026-09-20',
+
+                    completed:
+                        false,
+
+                    user_id:
+                        user.id
+
+                });
+
+
+            const response =
+                await agent
+                    .put(
+                        `/todos/${todo.id}`
+                    )
+                    .set(
+                        'x-csrf-token',
+                        csrfToken
+                    )
+                    .send({
+
+                        completed:
+                            true
+
+                    });
+
+
+            expect(
+                response.statusCode
+            ).toBe(200);
+
+
+            expect(
+                response.body.completed
+            ).toBe(true);
+
+
+            const updatedTodo =
+                await Todo.findByPk(
+                    todo.id
+                );
+
+
+            expect(
+                updatedTodo
+            ).not.toBeNull();
+
+
+            expect(
+                updatedTodo.completed
+            ).toBe(true);
+
+        }
+    );
+
+
+    // ============================================================
+    // DELETE /todos/:id WITHOUT CSRF
+    // ============================================================
+
+    test(
+        'DELETE /todos/:id should reject request without CSRF token',
+        async () => {
+
+            const user =
+                await createTestUser();
+
+
+            const agent =
+                request.agent(app);
+
+
+            await login(
+                agent,
+                user
+            );
+
+
+            const todo =
+                await Todo.create({
+
+                    title:
+                        'CSRF Delete Test',
+
+                    dueDate:
+                        '2026-09-20',
+
+                    completed:
+                        false,
+
+                    user_id:
+                        user.id
+
+                });
+
+
+            const response =
+                await agent
+                    .delete(
+                        `/todos/${todo.id}`
+                    );
+
+
+            expect(
+                response.statusCode
+            ).toBe(403);
+
+
+            const existingTodo =
+                await Todo.findByPk(
+                    todo.id
+                );
+
+
+            expect(
+                existingTodo
+            ).not.toBeNull();
+
+        }
+    );
+
+
+    // ============================================================
+    // DELETE /todos/:id WITH CSRF
+    // ============================================================
+
+    test(
+        'DELETE /todos/:id should delete an existing todo with valid CSRF token',
+        async () => {
+
+            const user =
+                await createTestUser();
+
+
+            const agent =
+                request.agent(app);
+
+
+            const csrfToken =
+                await login(
+                    agent,
+                    user
+                );
+
+
+            const todo =
+                await Todo.create({
+
+                    title:
+                        'Todo to delete',
+
+                    dueDate:
+                        '2026-09-20',
+
+                    completed:
+                        false,
+
+                    user_id:
+                        user.id
+
+                });
+
+
+            const response =
+                await agent
+                    .delete(
+                        `/todos/${todo.id}`
+                    )
+                    .set(
+                        'x-csrf-token',
+                        csrfToken
+                    );
+
+
+            expect(
+                response.statusCode
+            ).toBe(200);
+
+
+            expect(
+                response.body
+            ).toBe(true);
+
+
+            const deletedTodo =
+                await Todo.findByPk(
+                    todo.id
+                );
+
+
+            expect(
+                deletedTodo
+            ).toBeNull();
+
+        }
+    );
+
+
+    // ============================================================
+    // DELETE NON-EXISTING TODO
+    // ============================================================
+
+    test(
+        'DELETE /todos/:id should return false when todo does not exist with valid CSRF token',
+        async () => {
+
+            const user =
+                await createTestUser();
+
+
+            const agent =
+                request.agent(app);
+
+
+            const csrfToken =
+                await login(
+                    agent,
+                    user
+                );
+
+
+            const response =
+                await agent
+                    .delete(
+                        '/todos/999999'
+                    )
+                    .set(
+                        'x-csrf-token',
+                        csrfToken
+                    );
+
+
+            expect(
+                response.statusCode
+            ).toBe(200);
+
+
+            expect(
+                response.body
+            ).toBe(false);
+
+        }
+    );
+
+
+    // ============================================================
+    // USER OWNERSHIP
+    // ============================================================
+
+    test(
+        'User should not be able to update another user todo',
+        async () => {
+
+            const user1 =
+                await createTestUser(
+                    'first@example.com'
+                );
+
+
+            const user2 =
+                await createTestUser(
+                    'second@example.com'
+                );
+
+
+            const agent =
+                request.agent(app);
+
+
+            const csrfToken =
+                await login(
+                    agent,
+                    user1
+                );
+
+
+            const todo =
+                await Todo.create({
+
+                    title:
+                        'Another User Todo',
+
+                    dueDate:
+                        '2026-09-20',
+
+                    completed:
+                        false,
+
+                    user_id:
+                        user2.id
+
+                });
+
+
+            const response =
+                await agent
+                    .put(
+                        `/todos/${todo.id}`
+                    )
+                    .set(
+                        'x-csrf-token',
+                        csrfToken
+                    )
+                    .send({
+
+                        completed:
+                            true
+
+                    });
+
+
+            expect([
+                403,
+                404
+            ]).toContain(
+                response.statusCode
+            );
+
+
+            const unchangedTodo =
+                await Todo.findByPk(
+                    todo.id
+                );
+
+
+            expect(
+                unchangedTodo
+            ).not.toBeNull();
+
+
+            expect(
+                unchangedTodo.completed
+            ).toBe(false);
+
+        }
+    );
+
+
+    // ============================================================
+    // CSRF TOKEN GENERATION
+    // ============================================================
+
+    test(
+        'GET /todos should generate a CSRF token',
+        async () => {
+
+            const user =
+                await createTestUser();
+
+
+            const agent =
+                request.agent(app);
+
+
+            await login(
+                agent,
+                user
+            );
+
+
+            const response =
+                await agent.get(
+                    '/todos'
+                );
+
+
+            expect(
+                response.statusCode
+            ).toBe(200);
+
+
+            expect(
+                response.text
+            ).toMatch(
+                /const csrfToken\s*=\s*['"]([^'"]+)['"]/
+            );
+
+        }
+    );
 
 });
